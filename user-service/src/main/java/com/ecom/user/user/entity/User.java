@@ -1,4 +1,4 @@
-package com.ecom.user.user;
+package com.ecom.user.user.entity;
 
 import com.ecom.user.base.BaseEntity;
 import jakarta.persistence.*;
@@ -9,7 +9,6 @@ import lombok.*;
 @Table(name = "users")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class User extends BaseEntity {
 
@@ -18,4 +17,7 @@ public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(unique = true)
+    private String phoneNumber;
 }

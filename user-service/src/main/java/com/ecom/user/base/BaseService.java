@@ -24,11 +24,14 @@ public abstract class BaseService<T extends BaseEntity, ID extends UUID> {
         return repository.save(entity);
     }
 
-    public void softDelete(ID id) {
-        Optional<T> entity = repository.findById(id);
-        entity.ifPresent(e -> {
-            e.softDelete();
-            repository.save(e);
-        });
+    public boolean softDelete(ID id) {
+        Optional<T> entity = findById(id);
+        if (entity.isEmpty()) {
+            return false;
+        }
+
+        entity.get().softDelete();
+        repository.save(entity.get());
+        return true;
     }
 }
