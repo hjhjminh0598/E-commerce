@@ -37,7 +37,7 @@ public class UserController {
     }
 
     @DeleteMapping("/user/{id}")
-    public ResponseEntity<BaseResponse<Void>> softDelete(@PathVariable String id) {
+    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable String id) {
         userService.softDelete(UUID.fromString(id));
         return ResponseEntity.ok(BaseResponse.successNoData());
     }
