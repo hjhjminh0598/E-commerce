@@ -30,7 +30,7 @@ public class ProductController {
         try {
             return ResponseEntity.ok(BaseResponse.success(productService.getById(UUID.fromString(id))));
         } catch (Exception e) {
-            return ResponseEntity.ok(BaseResponse.failure());
+            return ResponseEntity.ok(BaseResponse.failure(e));
         }
     }
 
@@ -39,7 +39,7 @@ public class ProductController {
         try {
             return ResponseEntity.ok(BaseResponse.success(productService.create(request)));
         } catch (Exception e) {
-            return ResponseEntity.ok(BaseResponse.failure(e.getMessage()));
+            return ResponseEntity.ok(BaseResponse.failure(e));
         }
     }
 
@@ -49,7 +49,7 @@ public class ProductController {
         try {
             return ResponseEntity.ok(BaseResponse.success(productService.update(UUID.fromString(id), request)));
         } catch (Exception e) {
-            return ResponseEntity.ok(BaseResponse.failure(e.getMessage()));
+            return ResponseEntity.ok(BaseResponse.failure(e));
         }
     }
 
@@ -62,7 +62,7 @@ public class ProductController {
 
             return ResponseEntity.ok(BaseResponse.failure());
         } catch (Exception e) {
-            return ResponseEntity.ok(BaseResponse.failure());
+            return ResponseEntity.ok(BaseResponse.failure(e));
         }
     }
 

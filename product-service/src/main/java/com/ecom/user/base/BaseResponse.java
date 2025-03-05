@@ -42,6 +42,10 @@ public class BaseResponse<T> {
         return failure(DATA_NOT_FOUND);
     }
 
+    public static <T> BaseResponse<T> failure(Exception e) {
+        return failure(e.getMessage());
+    }
+
     public static <T> BaseResponse<T> failure(String message) {
         return BaseResponse.<T>builder()
                 .success(false)
