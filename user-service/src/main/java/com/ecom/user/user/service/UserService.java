@@ -1,34 +1,21 @@
 package com.ecom.user.user.service;
 
 import com.ecom.user.base.BaseService;
-import com.ecom.user.user.dto.CreateUserDTO;
-import com.ecom.user.user.dto.UpdateUserDTO;
+import com.ecom.user.user.dto.CreateUserRequest;
+import com.ecom.user.user.dto.UpdateUserRequest;
+import com.ecom.user.user.dto.UserDTO;
 import com.ecom.user.user.entity.User;
-import com.ecom.user.user.repository.UserRepository;
-import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
-@Service
-public class UserService extends BaseService<User, UUID> {
+public interface UserService extends BaseService<User, UUID> {
 
-    public UserService(UserRepository repository) {
-        super(repository);
-    }
+    List<UserDTO> getAllUsers();
 
-    public User create(CreateUserDTO createUserDTO) {
-        User user = new User();
-        user.setUsername(createUserDTO.getUsername());
-        user.setEmail(createUserDTO.getEmail());
-        return save(user);
-    }
+    UserDTO getById(UUID id);
 
-    public User update(UUID id, UpdateUserDTO updateUserDTO) {
-        return findById(id)
-                .map(user -> {
-                    user.setPhoneNumber(updateUserDTO.getPhoneNumber());
-                    return save(user);
-                })
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
+    UserDTO create(CreateUserRequest request);
+
+    UserDTO update(UUID id, UpdateUserRequest request);
 }

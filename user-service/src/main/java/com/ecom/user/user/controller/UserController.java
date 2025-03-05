@@ -1,8 +1,9 @@
 package com.ecom.user.user.controller;
 
 import com.ecom.user.base.BaseResponse;
-import com.ecom.user.user.dto.CreateUserDTO;
-import com.ecom.user.user.dto.UpdateUserDTO;
+import com.ecom.user.user.dto.CreateUserRequest;
+import com.ecom.user.user.dto.UpdateUserRequest;
+import com.ecom.user.user.dto.UserDTO;
 import com.ecom.user.user.service.UserService;
 import com.ecom.user.user.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -13,51 +14,49 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/users")
-    public ResponseEntity<BaseResponse<List<User>>> getAll() {
-        return ResponseEntity.ok(BaseResponse.success(userService.findAll()));
+    @GetMapping
+    public ResponseEntity<BaseResponse<List<UserDTO>>> getAll() {
+        return ResponseEntity.ok(BaseResponse.success(userService.getAllUsers()));
     }
 
-    @GetMapping("/user/{id}")
-    public ResponseEntity<BaseResponse<User>> getById(@PathVariable String id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<UserDTO>> getById(@PathVariable String id) {
         try {
-            return ResponseEntity.ok(userService.findById(UUID.fromString(id))
-                    .map(BaseResponse::success)
-                    .orElseGet(BaseResponse::failure));
+            return ResponseEntity.ok(BaseResponse.success(userService.getById(UUID.fromString(id))));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure());
         }
     }
 
-    @PostMapping("/user")
-    public ResponseEntity<BaseResponse<User>> create(@RequestBody CreateUserDTO createUserDTO) {
+    @PostMapping
+    public ResponseEntity<BaseResponse<UserDTO>> create(@RequestBody CreateUserRequest request) {
         try {
-            return ResponseEntity.ok(BaseResponse.success(userService.create(createUserDTO)));
+            return ResponseEntity.ok(BaseResponse.success(userService.create(request)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure(e.getMessage()));
         }
     }
 
-    @PutMapping("/user/{id}")
-    public ResponseEntity<BaseResponse<User>> update(@PathVariable String id,
-                                                     @RequestBody UpdateUserDTO updateUserDTO) {
+    @PutMapping("/{id}")
+    public ResponseEntity<BaseResponse<UserDTO>> update(@PathVariable String id,
+                                                        @RequestBody UpdateUserRequest request) {
         try {
-            return ResponseEntity.ok(BaseResponse.success(userService.update(UUID.fromString(id), updateUserDTO)));
+            return ResponseEntity.ok(BaseResponse.success(userService.update(UUID.fromString(id), request)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure(e.getMessage()));
         }
     }
 
-    @DeleteMapping("/user/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> delete(@PathVariable String id) {
         try {
-            if (userService.softDelete(UUID.fromString(id))) {
+            if (userService.delete(UUID.fromString(id))) {
                 return ResponseEntity.ok(BaseResponse.successNoData());
             }
 
