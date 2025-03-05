@@ -5,7 +5,6 @@ import com.ecom.user.user.dto.CreateUserRequest;
 import com.ecom.user.user.dto.UpdateUserRequest;
 import com.ecom.user.user.dto.UserDTO;
 import com.ecom.user.user.service.UserService;
-import com.ecom.user.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,9 +25,9 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BaseResponse<UserDTO>> getById(@PathVariable String id) {
+    public ResponseEntity<BaseResponse<UserDTO>> getById(@PathVariable UUID id) {
         try {
-            return ResponseEntity.ok(BaseResponse.success(userService.getById(UUID.fromString(id))));
+            return ResponseEntity.ok(BaseResponse.success(userService.getById(id)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure());
         }
@@ -44,19 +43,19 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BaseResponse<UserDTO>> update(@PathVariable String id,
+    public ResponseEntity<BaseResponse<UserDTO>> update(@PathVariable UUID id,
                                                         @RequestBody UpdateUserRequest request) {
         try {
-            return ResponseEntity.ok(BaseResponse.success(userService.update(UUID.fromString(id), request)));
+            return ResponseEntity.ok(BaseResponse.success(userService.update(id, request)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure(e.getMessage()));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable String id) {
+    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable UUID id) {
         try {
-            if (userService.delete(UUID.fromString(id))) {
+            if (userService.delete(id)) {
                 return ResponseEntity.ok(BaseResponse.successNoData());
             }
 
