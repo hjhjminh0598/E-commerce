@@ -5,6 +5,7 @@ import com.ecom.user.product.dto.CreateProductRequest;
 import com.ecom.user.product.dto.ProductDTO;
 import com.ecom.user.product.dto.UpdateProductRequest;
 import com.ecom.user.product.service.ProductService;
+import com.ecom.user.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -63,5 +64,10 @@ public class ProductController {
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure());
         }
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<BaseResponse<UserResponse>> getUsers(@PathVariable UUID id) {
+        return ResponseEntity.ok(BaseResponse.success(productService.getUserById(id)));
     }
 }

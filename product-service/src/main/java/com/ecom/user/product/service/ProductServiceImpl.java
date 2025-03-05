@@ -6,6 +6,8 @@ import com.ecom.user.product.dto.CreateProductRequest;
 import com.ecom.user.product.dto.ProductDTO;
 import com.ecom.user.product.dto.UpdateProductRequest;
 import com.ecom.user.product.entity.Product;
+import com.ecom.user.user.UserServiceClient;
+import com.ecom.user.user.dto.UserResponse;
 import com.ecom.user.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +17,11 @@ import java.util.UUID;
 @Service
 public class ProductServiceImpl extends BaseServiceImpl<Product, UUID> implements ProductService {
 
-    protected ProductServiceImpl(BaseRepository<Product, UUID> repository) {
+    private final UserServiceClient userServiceClient;
+
+    protected ProductServiceImpl(BaseRepository<Product, UUID> repository, UserServiceClient userServiceClient) {
         super(repository);
+        this.userServiceClient = userServiceClient;
     }
 
     @Override
@@ -54,5 +59,10 @@ public class ProductServiceImpl extends BaseServiceImpl<Product, UUID> implement
         }
 
         return ProductDTO.of(super.save(product));
+    }
+
+    @Override
+    public UserResponse getUserById(UUID id) {
+        return userServiceClient.getUserById(id).getData();
     }
 }
