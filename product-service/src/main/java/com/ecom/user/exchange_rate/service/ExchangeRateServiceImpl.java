@@ -3,6 +3,7 @@ package com.ecom.user.exchange_rate.service;
 import com.ecom.user.exchange_rate.dto.ExchangeRateDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
@@ -17,27 +18,31 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
     }
 
-    public ExchangeRateDTO getExchangeRateData(String baseCurrency, String targetCurrency) {
-        return ExchangeRateDTO.builder()
-                .rate(this.getExchangeRate(baseCurrency, targetCurrency))
-                .base(baseCurrency)
-                .target(targetCurrency)
-                .build();
+    public Mono<ExchangeRateDTO> getExchangeRateData(String baseCurrency, String targetCurrency) {
+        return getExchangeRate(baseCurrency, targetCurrency)
+                .map(rate -> ExchangeRateDTO.builder()
+                        .rate(rate)
+                        .base(baseCurrency)
+                        .target(targetCurrency)
+                        .build()
+                );
     }
 
     @Override
-    public Double getExchangeRate(String baseCurrency, String targetCurrency) {
-        Map response = webClient.get()
+    public Mono<Double> getExchangeRate(String baseCurrency, String targetCurrency) {
+        return webClient.get()
                 .uri(baseCurrency)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .block();
+                .flatMap(response -> {
+                    if (response == null || !response.containsKey("rates")) {
+                        return Mono.error(new RuntimeException("Failed to fetch exchange rate"));
+                    }
 
-        if (response == null || !response.containsKey("rates")) {
-            throw new RuntimeException("Failed to fetch exchange rate");
-        }
+                    Map<String, Double> rates = (Map<String, Double>) response.get("rates");
+                    Double exchangeRate = rates.getOrDefault(targetCurrency, null);
 
-        Map<String, Double> rates = (Map<String, Double>) response.get("rates");
-        return rates.getOrDefault(targetCurrency, null);
+                    return exchangeRate != null ? Mono.just(exchangeRate) : Mono.error(new RuntimeException("Target currency not found"));
+                });
     }
 }

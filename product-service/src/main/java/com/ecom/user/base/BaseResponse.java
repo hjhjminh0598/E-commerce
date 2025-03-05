@@ -42,7 +42,7 @@ public class BaseResponse<T> {
         return failure(DATA_NOT_FOUND);
     }
 
-    public static <T> BaseResponse<T> failure(Exception e) {
+    public static <T> BaseResponse<T> failure(Throwable e) {
         return failure(e.getMessage());
     }
 
