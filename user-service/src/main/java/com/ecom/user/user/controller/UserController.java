@@ -1,15 +1,18 @@
 package com.ecom.user.user.controller;
 
 import com.ecom.user.base.BaseResponse;
+import com.ecom.user.base.PageResponse;
 import com.ecom.user.user.dto.CreateUserRequest;
 import com.ecom.user.user.dto.UpdateUserRequest;
 import com.ecom.user.user.dto.UserDTO;
 import com.ecom.user.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -20,8 +23,9 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<UserDTO>>> getAll() {
-        return ResponseEntity.ok(BaseResponse.success(userService.getAllUsers()));
+    public ResponseEntity<BaseResponse<PageResponse<UserDTO>>> getAll(
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(BaseResponse.success(userService.getAllUsers(pageable)));
     }
 
     @GetMapping("/{id}")

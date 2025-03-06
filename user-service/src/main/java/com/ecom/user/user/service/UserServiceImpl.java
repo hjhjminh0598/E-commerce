@@ -1,14 +1,15 @@
 package com.ecom.user.user.service;
 
 import com.ecom.user.base.BaseServiceImpl;
+import com.ecom.user.base.PageResponse;
 import com.ecom.user.user.dto.CreateUserRequest;
 import com.ecom.user.user.dto.UpdateUserRequest;
 import com.ecom.user.user.dto.UserDTO;
 import com.ecom.user.user.entity.User;
 import com.ecom.user.user.repository.UserRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,8 +20,8 @@ public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements User
     }
 
     @Override
-    public List<UserDTO> getAllUsers() {
-        return super.findAll().stream().map(UserDTO::of).toList();
+    public PageResponse<UserDTO> getAllUsers(Pageable pageable) {
+        return PageResponse.from(super.findAll(pageable).map(UserDTO::of));
     }
 
     @Override

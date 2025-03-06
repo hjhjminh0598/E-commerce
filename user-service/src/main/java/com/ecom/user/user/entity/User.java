@@ -4,12 +4,10 @@ import com.ecom.user.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-
+@Getter
+@Setter
 @Entity
 @Table(name = "users")
-@Data
-@NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
