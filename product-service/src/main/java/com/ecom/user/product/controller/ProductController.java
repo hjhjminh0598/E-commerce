@@ -1,12 +1,16 @@
 package com.ecom.user.product.controller;
 
 import com.ecom.user.base.BaseResponse;
+import com.ecom.user.base.PageResponse;
 import com.ecom.user.product.dto.CreateProductRequest;
 import com.ecom.user.product.dto.ProductDTO;
 import com.ecom.user.product.dto.UpdateProductRequest;
 import com.ecom.user.product.service.ProductService;
 import com.ecom.user.user.dto.UserResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,14 +25,24 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<ProductDTO>>> getAll() {
-        return ResponseEntity.ok(BaseResponse.success(productService.getAllProducts()));
+    public ResponseEntity<BaseResponse<PageResponse<ProductDTO>>> getAll(
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(BaseResponse.success(productService.getAllProducts(pageable)));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<ProductDTO>> getById(@PathVariable String id) {
         try {
             return ResponseEntity.ok(BaseResponse.success(productService.getById(UUID.fromString(id))));
+        } catch (Exception e) {
+            return ResponseEntity.ok(BaseResponse.failure(e));
+        }
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<BaseResponse<List<ProductDTO>>> getByIds(@RequestBody List<String> productIds) {
+        try {
+            return ResponseEntity.ok(BaseResponse.success(productService.getAllByIds(productIds)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure(e));
         }

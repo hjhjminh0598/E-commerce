@@ -1,5 +1,8 @@
 package com.ecom.user.base;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,12 +15,16 @@ public abstract class BaseServiceImpl<T extends BaseEntity, ID extends UUID> imp
         this.repository = repository;
     }
 
-    public List<T> findAll() {
-        return repository.findAllNotDeleted();
+    public Page<T> findAll(Pageable pageable) {
+        return repository.findAllNotDeleted(pageable);
     }
 
     public Optional<T> findById(ID id) {
         return repository.findByIdNotDeleted(id);
+    }
+
+    public List<T> findAllById(List<ID> ids) {
+        return repository.findAllByIdNotDeleted(ids);
     }
 
     public T save(T entity) {
