@@ -31,9 +31,9 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BaseResponse<ProductDTO>> getById(@PathVariable String id) {
+    public ResponseEntity<BaseResponse<ProductDTO>> getById(@PathVariable UUID id) {
         try {
-            return ResponseEntity.ok(BaseResponse.success(productService.getById(UUID.fromString(id))));
+            return ResponseEntity.ok(BaseResponse.success(productService.getById(id)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure(e));
         }
@@ -58,19 +58,19 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BaseResponse<ProductDTO>> update(@PathVariable String id,
+    public ResponseEntity<BaseResponse<ProductDTO>> update(@PathVariable UUID id,
                                                            @RequestBody UpdateProductRequest request) {
         try {
-            return ResponseEntity.ok(BaseResponse.success(productService.update(UUID.fromString(id), request)));
+            return ResponseEntity.ok(BaseResponse.success(productService.update(id, request)));
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure(e));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable String id) {
+    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable UUID id) {
         try {
-            if (productService.delete(UUID.fromString(id))) {
+            if (productService.delete(id)) {
                 return ResponseEntity.ok(BaseResponse.successNoData());
             }
 

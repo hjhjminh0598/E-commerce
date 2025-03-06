@@ -18,5 +18,7 @@ public class UserResponse {
 
     private String phoneNumber;
 
+    private String currency;
+
     private LocalDateTime updatedAt;
 }
