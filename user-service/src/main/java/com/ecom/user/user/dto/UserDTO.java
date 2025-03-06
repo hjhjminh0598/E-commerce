@@ -19,6 +19,8 @@ public class UserDTO {
 
     private String phoneNumber;
 
+    private String currency;
+
     private LocalDateTime updatedAt;
 
     public static UserDTO of(User user) {
@@ -27,6 +29,7 @@ public class UserDTO {
         userDTO.setUsername(user.getUsername());
         userDTO.setEmail(user.getEmail());
         userDTO.setPhoneNumber(user.getPhoneNumber());
+        userDTO.setCurrency(user.getCurrency());
         userDTO.setUpdatedAt(user.getUpdatedAt());
         return userDTO;
     }
