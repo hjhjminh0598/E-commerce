@@ -3,6 +3,7 @@ package com.ecom.user.base;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +30,10 @@ public abstract class BaseServiceImpl<T extends BaseEntity, ID extends UUID> imp
 
     public T save(T entity) {
         return repository.save(entity);
+    }
+
+    public List<T> saveAll(Collection<T> entities) {
+        return repository.saveAll(entities);
     }
 
     public boolean delete(ID id) {
