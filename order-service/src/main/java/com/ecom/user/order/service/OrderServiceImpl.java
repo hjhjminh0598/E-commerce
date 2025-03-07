@@ -7,9 +7,11 @@ import com.ecom.user.base.PageResponse;
 import com.ecom.user.exchange_rate.service.ExchangeRateService;
 import com.ecom.user.order.dto.CreateOrderRequest;
 import com.ecom.user.order.dto.OrderDTO;
+import com.ecom.user.order.dto.OrderItemDTO;
 import com.ecom.user.order.dto.OrderItemRequest;
 import com.ecom.user.order.entity.Order;
 import com.ecom.user.order.entity.OrderItem;
+import com.ecom.user.order.repository.OrderRepository;
 import com.ecom.user.product.ProductServiceClient;
 import com.ecom.user.product.dto.ProductResponse;
 import com.ecom.user.user.UserServiceClient;
@@ -17,6 +19,7 @@ import com.ecom.user.user.dto.UserResponse;
 import com.ecom.user.utils.CollectionUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,14 +31,20 @@ import java.util.stream.Collectors;
 @Service
 public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements OrderService {
 
+    private final OrderRepository orderRepository;
+
+    private final OrderItemService orderItemService;
+
     private final UserServiceClient userServiceClient;
 
     private final ProductServiceClient productServiceClient;
 
     private final ExchangeRateService exchangeRateService;
 
-    protected OrderServiceImpl(BaseRepository<Order, UUID> repository, ProductServiceClient productServiceClient, UserServiceClient userServiceClient, ExchangeRateService exchangeRateService) {
+    protected OrderServiceImpl(BaseRepository<Order, UUID> repository, OrderRepository orderRepository, OrderItemService orderItemService, ProductServiceClient productServiceClient, UserServiceClient userServiceClient, ExchangeRateService exchangeRateService) {
         super(repository);
+        this.orderRepository = orderRepository;
+        this.orderItemService = orderItemService;
         this.productServiceClient = productServiceClient;
         this.userServiceClient = userServiceClient;
         this.exchangeRateService = exchangeRateService;
@@ -43,33 +52,39 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
 
     @Override
     public PageResponse<OrderDTO> getAllOrders(Pageable pageable) {
-        return PageResponse.from(super.findAll(pageable).map(OrderDTO::of));
+        return PageResponse.from(super.findAll(pageable).map(this::toOrderDTO));
+    }
+
+    @Override
+    public PageResponse<OrderDTO> getByUser(UUID userId, Pageable pageable) {
+        return PageResponse.from(orderRepository.findAllByUserId(userId, pageable).map(this::toOrderDTO));
     }
 
     @Override
     public OrderDTO getById(UUID id) {
-        return super.findById(id).map(OrderDTO::of).orElse(null);
+        return super.findById(id).map(this::toOrderDTO).orElse(null);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public OrderDTO create(CreateOrderRequest request) {
         validateOrderRequest(request);
-
         UserResponse user = getUserById(request.getUserId());
-        Order order = new Order();
-        order.setUserId(user.getId());
-        order.setUserCurrency(user.getCurrency());
 
         List<ProductResponse> products = fetchProducts(request.getItems());
         Map<String, ProductResponse> productMap = products.stream()
                 .collect(Collectors.toMap(p -> p.getId().toString(), Function.identity()));
 
+        Order order = new Order();
+        order.setUserId(user.getId());
+        order.setUserCurrency(user.getCurrency());
+
         List<OrderItem> items = mapToOrderItems(order, productMap, request.getItems());
-
-        order.setItems(items);
         setPrice(order, items);
+        order = orderRepository.save(order);
+        items = orderItemService.saveAll(items);
 
-        return OrderDTO.of(super.save(order));
+        return OrderDTO.of(order, items.stream().map(OrderItemDTO::of).toList());
     }
 
     private void setPrice(Order order, List<OrderItem> items) {
@@ -131,7 +146,6 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
         return orderItems;
     }
 
-
     private OrderItem toOrderItem(Order order, ProductResponse product, OrderItemRequest item) {
         OrderItem orderItem = new OrderItem();
         orderItem.setOrder(order);
@@ -140,5 +154,9 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
         orderItem.setPrice(product.getPrice());
 
         return orderItem;
+    }
+
+    private OrderDTO toOrderDTO(Order order) {
+        return OrderDTO.of(order, orderItemService.getByOrderId(order.getId()));
     }
 }

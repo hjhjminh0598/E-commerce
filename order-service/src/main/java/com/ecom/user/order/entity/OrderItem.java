@@ -3,6 +3,8 @@ package com.ecom.user.order.entity;
 import com.ecom.user.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -12,11 +14,12 @@ import java.util.UUID;
 @Table(name = "order_items", indexes = {@Index(name = "idx_product_id", columnList = "productId")})
 public class OrderItem extends BaseEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, columnDefinition = "CHAR(36)")
     private UUID productId;
 
     @Column(nullable = false)

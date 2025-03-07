@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface OrderItemService extends BaseService<OrderItem, UUID> {
 
-    List<OrderItemDTO> getItemsByOrderId(UUID orderId);
+    List<OrderItemDTO> getByOrderId(UUID orderId);
 }

@@ -3,8 +3,9 @@ package com.ecom.user.order.entity;
 import com.ecom.user.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -13,11 +14,9 @@ import java.util.UUID;
 @Table(name = "orders", indexes = {@Index(name = "idx_user_id", columnList = "userId")})
 public class Order extends BaseEntity {
 
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, columnDefinition = "CHAR(36)")
     private UUID userId;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items;
 
     @Column(nullable = false)
     private Double totalPrice;

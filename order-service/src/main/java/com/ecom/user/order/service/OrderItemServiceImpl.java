@@ -21,8 +21,8 @@ public class OrderItemServiceImpl extends BaseServiceImpl<OrderItem, UUID> imple
     }
 
     @Override
-    public List<OrderItemDTO> getItemsByOrderId(UUID orderId) {
-        return orderItemRepository.findAllByOrderId(orderId).stream()
+    public List<OrderItemDTO> getByOrderId(UUID orderId) {
+        return orderItemRepository.findByOrderId(orderId).stream()
                 .map(OrderItemDTO::of).toList();
     }
 }

@@ -13,6 +13,8 @@ public interface OrderService extends BaseService<Order, UUID> {
 
     PageResponse<OrderDTO> getAllOrders(Pageable pageable);
 
+    PageResponse<OrderDTO> getByUser(UUID userId, Pageable pageable);
+
     OrderDTO getById(UUID id);
 
     OrderDTO create(CreateOrderRequest request);

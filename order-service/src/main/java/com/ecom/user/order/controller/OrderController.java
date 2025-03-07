@@ -12,6 +12,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
@@ -23,6 +25,12 @@ public class OrderController {
     public ResponseEntity<BaseResponse<PageResponse<OrderDTO>>> getAll(
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(BaseResponse.success(orderService.getAllOrders(pageable)));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<BaseResponse<PageResponse<OrderDTO>>> getByUser(@PathVariable UUID userId,
+                                                                          @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(BaseResponse.success(orderService.getByUser(userId, pageable)));
     }
 
     @PostMapping

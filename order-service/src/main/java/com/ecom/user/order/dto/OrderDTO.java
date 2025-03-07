@@ -1,6 +1,7 @@
 package com.ecom.user.order.dto;
 
 import com.ecom.user.order.entity.Order;
+import com.ecom.user.order.entity.OrderItem;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,12 +23,12 @@ public class OrderDTO {
 
     private LocalDateTime updatedAt;
 
-    public static OrderDTO of(Order order) {
+    public static OrderDTO of(Order order, List<OrderItemDTO> orderItems) {
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setId(order.getId());
         orderDTO.setTotalPrice(order.getTotalPrice());
         orderDTO.setTotalLocalPrice(order.getTotalLocalPrice());
-        orderDTO.setOrderItems(order.getItems().stream().map(OrderItemDTO::of).toList());
+        orderDTO.setOrderItems(orderItems);
         orderDTO.setUpdatedAt(order.getUpdatedAt());
         return orderDTO;
     }

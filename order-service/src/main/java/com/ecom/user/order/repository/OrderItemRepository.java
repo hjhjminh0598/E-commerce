@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface OrderItemRepository extends BaseRepository<OrderItem, UUID> {
 
     @Query("SELECT oi FROM OrderItem oi WHERE oi.order.id = :orderId AND oi.deletedAt IS NULL")
-    List<OrderItem> findAllByOrderId(UUID orderId);
+    List<OrderItem> findByOrderId(UUID orderId);
 }
