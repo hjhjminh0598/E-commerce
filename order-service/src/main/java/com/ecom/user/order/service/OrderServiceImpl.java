@@ -126,7 +126,7 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
                 .map(OrderItemRequest::getProductId)
                 .toList();
 
-        List<ProductResponse> products = productServiceClient.getProductsByIds(productIds).getData();
+        List<ProductResponse> products = productServiceClient.getProductByIds(productIds);
         if (CollectionUtils.isEmpty(products)) {
             throw new RuntimeException("Products not found");
         }

@@ -18,13 +18,11 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
-  cloud:
-    loadbalancer:
-      instances:
-        product-service:
-          - http://localhost:2025
-          - http://localhost:2026
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
 user:
   service:
