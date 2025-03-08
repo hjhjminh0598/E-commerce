@@ -26,4 +26,4 @@ eureka:
 
 user:
   service:
-    url: http://localhost:1025/api/v1
+    url: http://user-service
