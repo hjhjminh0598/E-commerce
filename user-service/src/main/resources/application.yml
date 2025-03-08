@@ -1,11 +1,11 @@
 server:
-  port: 2025
+  port: 1025
 
 spring:
   application:
-    name: product-service
+    name: user-service
   datasource:
-    url: jdbc:mysql://localhost:3308/product_db
+    url: jdbc:mysql://localhost:3306/user_db
     username: admin
     password: giangnt@2025
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -23,7 +23,6 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
-user:
-  service:
-    url: http://user-service
+  instance:
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10
