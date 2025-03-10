@@ -7,7 +7,8 @@ import com.ecom.product.product.dto.CreateProductRequest;
 import com.ecom.product.product.dto.ProductDTO;
 import com.ecom.product.product.dto.UpdateProductRequest;
 import com.ecom.product.product.entity.Product;
-import com.ecom.product.user.UserServiceClient;
+import com.ecom.product.user.service.UserService;
+import com.ecom.product.user.service.UserServiceClient;
 import com.ecom.product.user.dto.UserResponse;
 import com.ecom.product.utils.StringUtils;
 import org.springframework.data.domain.Pageable;
@@ -20,11 +21,11 @@ import java.util.UUID;
 @Service
 public class ProductServiceImpl extends BaseServiceImpl<Product, UUID> implements ProductService {
 
-    private final UserServiceClient userServiceClient;
+    private final UserService userService;
 
-    protected ProductServiceImpl(BaseRepository<Product, UUID> repository, UserServiceClient userServiceClient) {
+    protected ProductServiceImpl(BaseRepository<Product, UUID> repository, UserService userService) {
         super(repository);
-        this.userServiceClient = userServiceClient;
+        this.userService = userService;
     }
 
     @Override
@@ -90,6 +91,6 @@ public class ProductServiceImpl extends BaseServiceImpl<Product, UUID> implement
 
     @Override
     public UserResponse getUserById(UUID id) {
-        return userServiceClient.getUserById(id).getData();
+        return userService.getUserById(id);
     }
 }

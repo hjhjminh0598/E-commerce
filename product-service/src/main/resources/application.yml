@@ -27,6 +27,12 @@ eureka:
     lease-renewal-interval-in-seconds: 5
     lease-expiration-duration-in-seconds: 10
 
-user:
-  service:
-    url: http://user-service
+resilience4j.circuitbreaker:
+  instances:
+    userService:
+      slidingWindowSize: 10          # number of recent requests considered
+      failureRateThreshold: 50       # circuit opens if 50% requests fail
+      waitDurationInOpenState: 10s   # circuit stays open for 10 seconds before retrying
+      permittedNumberOfCallsInHalfOpenState: 3
+
+management.endpoints.web.exposure.include: '*'
