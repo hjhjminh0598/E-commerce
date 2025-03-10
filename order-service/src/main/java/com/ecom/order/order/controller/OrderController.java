@@ -27,6 +27,11 @@ public class OrderController {
         return ResponseEntity.ok(BaseResponse.success(orderService.getAllOrders(pageable)));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<OrderDTO>> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(BaseResponse.success(orderService.getById(id)));
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<BaseResponse<PageResponse<OrderDTO>>> getByUser(@PathVariable UUID userId,
                                                                           @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {

@@ -19,18 +19,49 @@ spring:
         jdbc:
           time_zone: UTC
 
+feign:
+  client:
+    config:
+      productServiceClient:
+        retryer: feign.Retryer.NEVER_RETRY
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
   instance:
     lease-renewal-interval-in-seconds: 5
-    lease-expiration-duration-in-seconds: 10
+    lease-expiration-duration-in-seconds: 5
 
-user:
-  service:
-    url: http://user-service
+resilience4j.circuitbreaker:
+  instances:
+    productService:
+      slidingWindowSize: 10
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10s
+      permittedNumberOfCallsInHalfOpenState: 3
 
-product:
-  service:
-    url: http://product-service
+resilience4j.retry:
+  instances:
+    productService:
+      maxAttempts: 3
+      waitDuration: 2s
+      retryExceptions:
+        - feign.RetryableException
+        - feign.FeignException.ServiceUnavailable
+        - java.net.ConnectException
+
+resilience4j.bulkhead:
+  instances:
+    productService:
+      maxConcurrentCalls: 10
+      maxWaitDuration: 500ms
+
+resilience4j.ratelimiter:
+  instances:
+    productService:
+      limitForPeriod: 10      # 10 requests per period
+      limitRefreshPeriod: 1s  # period = 1 second
+      timeoutDuration: 500ms
+
+management.endpoints.web.exposure.include: "*"

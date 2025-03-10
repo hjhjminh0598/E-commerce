@@ -12,7 +12,7 @@ import com.ecom.order.order.dto.OrderItemRequest;
 import com.ecom.order.order.entity.Order;
 import com.ecom.order.order.entity.OrderItem;
 import com.ecom.order.order.repository.OrderRepository;
-import com.ecom.order.product.ProductServiceClient;
+import com.ecom.order.product.service.ProductService;
 import com.ecom.order.product.dto.ProductResponse;
 import com.ecom.order.user.UserServiceClient;
 import com.ecom.order.user.dto.UserResponse;
@@ -37,15 +37,15 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
 
     private final UserServiceClient userServiceClient;
 
-    private final ProductServiceClient productServiceClient;
+    private final ProductService productService;
 
     private final ExchangeRateService exchangeRateService;
 
-    protected OrderServiceImpl(BaseRepository<Order, UUID> repository, OrderRepository orderRepository, OrderItemService orderItemService, ProductServiceClient productServiceClient, UserServiceClient userServiceClient, ExchangeRateService exchangeRateService) {
+    protected OrderServiceImpl(BaseRepository<Order, UUID> repository, OrderRepository orderRepository, OrderItemService orderItemService, UserServiceClient userServiceClient, ProductService productService, ExchangeRateService exchangeRateService) {
         super(repository);
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
-        this.productServiceClient = productServiceClient;
+        this.productService = productService;
         this.userServiceClient = userServiceClient;
         this.exchangeRateService = exchangeRateService;
     }
@@ -126,7 +126,7 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
                 .map(OrderItemRequest::getProductId)
                 .toList();
 
-        List<ProductResponse> products = productServiceClient.getProductByIds(productIds);
+        List<ProductResponse> products = productService.getProductsByIds(productIds);
         if (CollectionUtils.isEmpty(products)) {
             throw new RuntimeException("Products not found");
         }
