@@ -1,4 +1,4 @@
-package com.ecom.product.user;
+package com.ecom.product.user.service;
 
 import com.ecom.product.base.BaseResponse;
 import com.ecom.product.user.dto.UserResponse;
