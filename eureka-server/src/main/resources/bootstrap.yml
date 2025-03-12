@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: eureka-server  # This must match 'eureka-server.yml' in Git
+  cloud:
+    config:
+      uri: http://localhost:8888  # Fetch from Config Server
+      fail-fast: true  # Fail startup if Config Server is unavailable
+  config:
+    import: "optional:configserver:"

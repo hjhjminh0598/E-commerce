@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: user-service
+  cloud:
+    config:
+      uri: http://localhost:8888  # Fetch from Config Server
+      fail-fast: true  # Fail startup if Config Server is unavailable
+  config:
+    import: "optional:configserver:"  # ✅ Required for Spring Boot 3.x
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/  # Register with Eureka

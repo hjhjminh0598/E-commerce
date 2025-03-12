@@ -1,19 +1,25 @@
 server:
-  port: 8888  # Config Server runs on port 8888
+  port: 8888  # Cloud Config Server runs on port 8888
 
 spring:
+  application:
+    name: cloud-config-server
   cloud:
     config:
       server:
         git:
-          uri: https://github.com/hjhjminh0598/E-commerce.git  # Your Git repo
-          searchPaths: cloud-config  # This is where config files are stored
+          uri: https://github.com/hjhjminh0598/E-commerce.git  # Your Git repository for configs
+          searchPaths: cloud-config  # Folder in Git where configs are stored
+          default-label: master
+          clone-on-start: true
+  config:
+    import: "optional:configserver:"  # ✅ REQUIRED for Spring Boot 3.x to load configs
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/  # Eureka Server URL
+      defaultZone: http://localhost:8761/eureka/  # Register Cloud Config Server with Eureka
     register-with-eureka: true
-    fetch-registry: false
+    fetch-registry: true
   instance:
     hostname: localhost
