@@ -1,0 +1,19 @@
+server:
+  port: 8888  # Config Server runs on port 8888
+
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/hjhjminh0598/E-commerce.git  # Your Git repo
+          searchPaths: cloud-config  # This is where config files are stored
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/  # Eureka Server URL
+    register-with-eureka: true
+    fetch-registry: false
+  instance:
+    hostname: localhost
