@@ -1,6 +1,8 @@
 spring:
   application:
-    name: order-service  # Must match 'order-service.yml' in Git
+    name: api-gateway  # Must match 'api-gateway.yml' in Git
+  config:
+    import: "configserver:"  # ✅ REQUIRED for Spring Boot 3.x
   cloud:
     config:
       uri: http://localhost:8888  # Fetch from Config Server

@@ -5,7 +5,7 @@ eureka:
   instance:
     hostname: localhost
   client:
-    register-with-eureka: false  # Eureka Server does NOT register itself
+    register-with-eureka: false
     fetch-registry: false
     registry-fetch-interval-seconds: 5
 
