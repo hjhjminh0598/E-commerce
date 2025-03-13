@@ -7,10 +7,3 @@ spring:
     config:
       uri: http://localhost:8888  # Fetch from Cloud Config Server
       fail-fast: true  # Ensure Eureka Server fails fast if Config Server is unavailable
-
-eureka:
-  instance:
-    hostname: localhost
-  client:
-    register-with-eureka: false  # ✅ Eureka Server does NOT register itself
-    fetch-registry: false  # ✅ Eureka Server does NOT fetch from another Eureka instance
