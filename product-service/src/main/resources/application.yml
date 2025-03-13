@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: product-service  # Must match 'product-service.yml' in Git
   config:
     import: "configserver:"  # ✅ REQUIRED for Spring Boot 3.x
   cloud:
