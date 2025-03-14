@@ -6,6 +6,8 @@ import com.ecom.user.user.dto.CreateUserRequest;
 import com.ecom.user.user.dto.UpdateUserRequest;
 import com.ecom.user.user.dto.UserDTO;
 import com.ecom.user.user.entity.User;
+import com.ecom.user.user.event.UserCreatedEvent;
+import com.ecom.user.user.producer.UserProducer;
 import com.ecom.user.user.repository.UserRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,8 +17,11 @@ import java.util.UUID;
 @Service
 public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements UserService {
 
-    public UserServiceImpl(UserRepository repository) {
+    private final UserProducer userProducer;
+
+    public UserServiceImpl(UserRepository repository, UserProducer userProducer) {
         super(repository);
+        this.userProducer = userProducer;
     }
 
     @Override
@@ -33,7 +38,11 @@ public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements User
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        return UserDTO.of(super.save(user));
+
+        user = super.save(user);
+        userProducer.publishUserCreatedEvent(UserCreatedEvent.of(user));
+
+        return UserDTO.of(user);
     }
 
     public UserDTO update(UUID id, UpdateUserRequest request) {
