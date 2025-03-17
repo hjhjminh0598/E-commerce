@@ -8,8 +8,8 @@
         <version>3.4.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.ecom</groupId>
-    <artifactId>product</artifactId>
+    <groupId>com.gnt</groupId>
+    <artifactId>ecom</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>product</name>
     <description>E-commerce Product Service</description>
