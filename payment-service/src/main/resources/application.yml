@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: payment-service
+  config:
+    import: "configserver:"  # ✅ REQUIRED for Spring Boot 3.x
+  cloud:
+    config:
+      uri: http://localhost:8888  # Fetch from Config Server
+      fail-fast: true  # Fail startup if Config Server is unavailable
+    bus:
+      enabled: true
