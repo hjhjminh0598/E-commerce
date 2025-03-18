@@ -4,6 +4,7 @@ import com.gnt.ecom.order.entity.Order;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -14,9 +15,9 @@ public class OrderDTO {
 
     private UUID id;
 
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
-    private Double totalLocalPrice;
+    private BigDecimal totalLocalPrice;
 
     private List<OrderItemDTO> orderItems;
 

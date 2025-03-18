@@ -15,7 +15,7 @@ public class OrderProducer {
     @Value("${kafka.topic.order-created}")
     private String orderCreatedTopic;
 
-    private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void publishOrderCreatedEvent(OrderCreatedEvent event) {
         log.info("🚀 Sending event: {}", event);

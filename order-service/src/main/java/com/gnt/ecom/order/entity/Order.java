@@ -6,6 +6,8 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -18,10 +20,19 @@ public class Order extends BaseEntity {
     @Column(nullable = false, columnDefinition = "CHAR(36)")
     private UUID userId;
 
+    @Column(precision = 19, scale = 2)
+    private BigDecimal totalPrice;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalLocalPrice;
+
+    @Column(nullable = false, length = 3)
+    private String userCurrency = "USD";
+
     @Column(nullable = false)
-    private Double totalPrice;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status = OrderStatus.PENDING;
 
-    private Double totalLocalPrice;
-
-    private String userCurrency;
+    @Column
+    private LocalDateTime paidAt;
 }

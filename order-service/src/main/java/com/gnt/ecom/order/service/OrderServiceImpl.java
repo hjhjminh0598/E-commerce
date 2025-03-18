@@ -19,10 +19,12 @@ import com.gnt.ecom.product.dto.ProductResponse;
 import com.gnt.ecom.user.UserServiceClient;
 import com.gnt.ecom.user.dto.UserResponse;
 import com.gnt.ecom.utils.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements OrderService {
 
@@ -95,11 +98,14 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
     }
 
     private void setPrice(Order order, List<OrderItem> items) {
-        order.setTotalPrice(items.stream()
-                .filter(i -> i.getPrice() >= 0 && i.getQuantity() > 0)
-                .mapToDouble(i -> i.getPrice() * i.getQuantity())
-                .sum());
-        order.setTotalLocalPrice(order.getTotalPrice() * exchangeRateService.getExchangeRateBaseUSD(order.getUserCurrency()));
+        BigDecimal totalPrice = items.stream()
+                .filter(i -> i.getPrice().compareTo(BigDecimal.ZERO) >= 0 && i.getQuantity() > 0)
+                .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setTotalPrice(totalPrice);
+        order.setTotalLocalPrice(totalPrice.multiply(
+                BigDecimal.valueOf(exchangeRateService.getExchangeRateBaseUSD(order.getUserCurrency()))));
     }
 
     private void validateOrderRequest(CreateOrderRequest request) {

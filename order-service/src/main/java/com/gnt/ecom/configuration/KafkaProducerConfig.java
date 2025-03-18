@@ -30,6 +30,16 @@ public class KafkaProducerConfig {
     }
 
     @Bean
+    public ProducerFactory<String, Object> defaultProducerFactory() {
+        return new DefaultKafkaProducerFactory<>(producerProps());
+    }
+
+    @Bean
+    public KafkaTemplate<String, Object> defaultKafkaTemplate() {
+        return new KafkaTemplate<>(defaultProducerFactory());
+    }
+
+    @Bean
     public ProducerFactory<String, OrderCreatedEvent> orderProducerFactory() {
         return new DefaultKafkaProducerFactory<>(producerProps());
     }
@@ -38,4 +48,6 @@ public class KafkaProducerConfig {
     public KafkaTemplate<String, OrderCreatedEvent> orderKafkaTemplate() {
         return new KafkaTemplate<>(orderProducerFactory());
     }
+
+
 }

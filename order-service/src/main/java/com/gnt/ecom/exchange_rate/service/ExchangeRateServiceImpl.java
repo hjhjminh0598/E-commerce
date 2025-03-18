@@ -51,10 +51,23 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
                         return Mono.error(new RuntimeException("Failed to fetch exchange rate"));
                     }
 
-                    Map<String, Double> rates = (Map<String, Double>) response.get("rates");
-                    Double exchangeRate = rates.getOrDefault(targetCurrency, null);
+                    Map<String, Object> rates = (Map<String, Object>) response.get("rates");
+                    Object rateValue = rates.getOrDefault(targetCurrency, null);
 
-                    return exchangeRate != null ? Mono.just(exchangeRate) : Mono.error(new RuntimeException("Target currency not found"));
+                    if (rateValue == null) {
+                        return Mono.error(new RuntimeException("Target currency not found"));
+                    }
+
+                    double exchangeRate;
+                    if (rateValue instanceof Integer) {
+                        exchangeRate = ((Integer) rateValue).doubleValue();
+                    } else if (rateValue instanceof Double) {
+                        exchangeRate = (Double) rateValue;
+                    } else {
+                        exchangeRate = (double) rateValue;
+                    }
+
+                    return Mono.just(exchangeRate);
                 });
     }
 }

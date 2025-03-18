@@ -3,24 +3,26 @@ package com.gnt.ecom.order.event;
 import com.gnt.ecom.order.entity.Order;
 import lombok.Data;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
-public class OrderCreatedEvent {
+public class OrderCreatedEvent implements Serializable {
 
-    private String id;
+    private UUID id;
 
     private UUID userId;
 
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
-    private Double totalLocalPrice;
+    private BigDecimal totalLocalPrice;
 
     private String userCurrency;
 
     public static OrderCreatedEvent of(Order order) {
         OrderCreatedEvent event = new OrderCreatedEvent();
-        event.setId(order.getId().toString());
+        event.setId(order.getId());
         event.setUserId(order.getUserId());
         event.setTotalPrice(order.getTotalPrice());
         event.setTotalLocalPrice(order.getTotalLocalPrice());
