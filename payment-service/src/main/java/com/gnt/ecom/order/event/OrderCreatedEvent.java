@@ -2,18 +2,20 @@ package com.gnt.ecom.order.event;
 
 import lombok.Data;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
-public class OrderCreatedEvent {
+public class OrderCreatedEvent implements Serializable {
 
-    private String id;
+    private UUID id;
 
     private UUID userId;
 
-    private Double totalPrice;
+    private BigDecimal totalPrice;
 
-    private Double totalLocalPrice;
+    private BigDecimal totalLocalPrice;
 
     private String userCurrency;
 }

@@ -4,13 +4,9 @@ public enum PaymentMethod {
 
     CASH,
 
-    E_WALLET,
+    CARD,
 
-    VISA,
+    BANK,
 
-    MASTERCARD,
-
-    INTERNET_BANKING,
-
-    PAYPAL
+    DIGITAL_WALLET
 }
