@@ -13,6 +13,7 @@ import com.gnt.ecom.utils.StringUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -66,7 +67,7 @@ public class ProductServiceImpl extends BaseServiceImpl<Product, UUID> implement
         if (StringUtils.isEmpty(request.getName())) {
             throw new RuntimeException("Name is required");
         }
-        if (request.getPrice() == null || request.getPrice() < 0) {
+        if (request.getPrice() == null || request.getPrice().compareTo(BigDecimal.ZERO) < 0) {
             throw new RuntimeException("Price is required");
         }
     }
@@ -81,7 +82,7 @@ public class ProductServiceImpl extends BaseServiceImpl<Product, UUID> implement
             product.setDescription(request.getDescription());
         }
 
-        if (request.getPrice() != null && request.getPrice() >= 0) {
+        if (request.getPrice() != null && request.getPrice().compareTo(BigDecimal.ZERO) >= 0) {
             product.setPrice(request.getPrice());
         }
 

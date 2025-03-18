@@ -4,6 +4,7 @@ import com.gnt.ecom.product.entity.Product;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -17,7 +18,7 @@ public class ProductDTO {
 
     private String description;
 
-    private Double price;
+    private BigDecimal price;
 
     private LocalDateTime updatedAt;
 
