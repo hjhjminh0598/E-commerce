@@ -54,7 +54,7 @@
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+            <artifactId>spring-cloud-starter-bus-kafka</artifactId>
             <version>4.2.0</version>
         </dependency>
 
