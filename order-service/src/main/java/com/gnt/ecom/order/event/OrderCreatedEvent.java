@@ -1,6 +1,7 @@
 package com.gnt.ecom.order.event;
 
 import com.gnt.ecom.order.entity.Order;
+import com.gnt.ecom.order.entity.PaymentMethod;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -20,6 +21,8 @@ public class OrderCreatedEvent implements Serializable {
 
     private String userCurrency;
 
+    private PaymentMethod method;
+
     public static OrderCreatedEvent of(Order order) {
         OrderCreatedEvent event = new OrderCreatedEvent();
         event.setId(order.getId());
@@ -27,6 +30,7 @@ public class OrderCreatedEvent implements Serializable {
         event.setTotalPrice(order.getTotalPrice());
         event.setTotalLocalPrice(order.getTotalLocalPrice());
         event.setUserCurrency(order.getUserCurrency());
+        event.setMethod(order.getMethod());
         return event;
     }
 }

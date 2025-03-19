@@ -19,6 +19,10 @@ public class OrderProducer {
 
     public void publishOrderCreatedEvent(OrderCreatedEvent event) {
         log.info("🚀 Sending event: {}", event);
-        kafkaTemplate.send(orderCreatedTopic, event);
+        try {
+            kafkaTemplate.send(orderCreatedTopic, event);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
     }
 }

@@ -85,6 +85,7 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
 
         Order order = new Order();
         order.setUserId(user.getId());
+        order.setMethod(request.getPaymentMethod());
         order.setUserCurrency(user.getCurrency());
 
         List<OrderItem> items = mapToOrderItems(order, productMap, request.getItems());

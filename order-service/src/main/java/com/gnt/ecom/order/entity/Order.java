@@ -35,4 +35,8 @@ public class Order extends BaseEntity {
 
     @Column
     private LocalDateTime paidAt;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod method = PaymentMethod.CASH;
 }
