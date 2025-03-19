@@ -1,5 +1,6 @@
 package com.gnt.ecom.order.event;
 
+import com.gnt.ecom.payment.entity.PaymentMethod;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -18,4 +19,6 @@ public class OrderCreatedEvent implements Serializable {
     private BigDecimal totalLocalPrice;
 
     private String userCurrency;
+
+    private PaymentMethod method = PaymentMethod.CASH;
 }

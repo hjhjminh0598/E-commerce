@@ -8,10 +8,9 @@ import org.springframework.data.repository.NoRepositoryBean;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @NoRepositoryBean
-public interface BaseRepository<T, ID extends UUID> extends JpaRepository<T, ID> {
+public interface BaseRepository<T extends BaseEntity, ID> extends JpaRepository<T, ID> {
 
     @Query(value = "SELECT e FROM #{#entityName} e WHERE e.deletedAt IS NULL",
             countQuery = "SELECT COUNT(e) FROM #{#entityName} e WHERE e.deletedAt IS NULL")

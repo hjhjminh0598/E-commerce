@@ -6,9 +6,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-public abstract class BaseServiceImpl<T extends BaseEntity, ID extends UUID> implements BaseService<T, ID> {
+public abstract class BaseServiceImpl<T extends BaseEntity, ID> implements BaseService<T, ID> {
 
     protected final BaseRepository<T, ID> repository;
 
