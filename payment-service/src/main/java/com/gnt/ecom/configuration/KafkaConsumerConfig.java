@@ -12,7 +12,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.util.backoff.FixedBackOff;
 
@@ -38,6 +40,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.gnt.ecom.*");
         return props;
     }
@@ -47,24 +50,38 @@ public class KafkaConsumerConfig {
         Map<String, Object> props = consumerProps();
         props.put(ConsumerConfig.GROUP_ID_CONFIG, paymentGroup);
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-                new JsonDeserializer<>(OrderCreatedEvent.class));
+                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(OrderCreatedEvent.class)));
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderCreatedEvent> orderKafkaListenerContainerFactory(KafkaTemplate<String, String> dlqKafkaTemplate) {
-        ConcurrentKafkaListenerContainerFactory<String, OrderCreatedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, OrderCreatedEvent> orderKafkaListenerContainerFactory(
+            KafkaTemplate<String, String> dlqKafkaTemplate) {
+        ConcurrentKafkaListenerContainerFactory<String, OrderCreatedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(orderConsumerFactory());
 
-        factory.setCommonErrorHandler(new DefaultErrorHandler(
+        DefaultErrorHandler errorHandler = getDefaultErrorHandler(dlqKafkaTemplate);
+
+        factory.setCommonErrorHandler(errorHandler);
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD); // Commit offset per record
+
+        return factory;
+    }
+
+    private DefaultErrorHandler getDefaultErrorHandler(KafkaTemplate<String, String> dlqKafkaTemplate) {
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
                 (record, exception) -> {
                     String value = record.value() != null ? record.value().toString() : "null";
                     dlqKafkaTemplate.send(orderCreatedDLQ, value);
                     log.info("Sent to DLQ: {}, Error: {}", value, exception.getMessage());
                 },
-                new FixedBackOff(1000L, 2) // Retry 2 times with 1s delay before sending to DLQ
-        ));
+                new FixedBackOff(1000L, 2)
+        );
 
-        return factory;
+        errorHandler.setRetryListeners((record, ex, deliveryAttempt) -> {
+            log.warn("Retry attempt {} for record: {}", deliveryAttempt, record.value());
+        });
+        return errorHandler;
     }
 
     @Bean
