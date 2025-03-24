@@ -93,9 +93,20 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
         order = orderRepository.save(order);
         items = orderItemService.saveAll(items);
 
-        orderProducer.publishOrderCreatedEvent(OrderCreatedEvent.of(order));
+        orderProducer.publishOrderCreatedEvent(this.toOrderCreatedEvent(order));
 
         return OrderDTO.of(order, items.stream().map(OrderItemDTO::of).toList());
+    }
+
+    private OrderCreatedEvent toOrderCreatedEvent(Order order) {
+        return OrderCreatedEvent.newBuilder()
+                .setId(order.getId().toString())
+                .setUserId(order.getUserId().toString())
+                .setTotalPrice(order.getTotalPrice().toString())
+                .setTotalLocalPrice(order.getTotalLocalPrice().toString())
+                .setUserCurrency(order.getUserCurrency())
+                .setMethod(order.getMethod().toString())
+                .build();
     }
 
     private void setPrice(Order order, List<OrderItem> items) {

@@ -1,0 +1,13 @@
+{
+  "namespace": "com.gnt.ecom.order.event",
+  "type": "record",
+  "name": "OrderCreatedEvent",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "userId", "type": "string"},
+    {"name": "totalPrice", "type": "string"},
+    {"name": "totalLocalPrice", "type": "string"},
+    {"name": "userCurrency", "type": "string"},
+    {"name": "method", "type": ["null", "string"], "default": "CASH"}
+  ]
+}
