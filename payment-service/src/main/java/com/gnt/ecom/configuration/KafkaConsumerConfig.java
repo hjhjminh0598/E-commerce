@@ -1,6 +1,8 @@
 package com.gnt.ecom.configuration;
 
 import com.gnt.ecom.order.event.OrderCreatedEvent;
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -15,7 +17,6 @@ import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
@@ -35,22 +36,27 @@ public class KafkaConsumerConfig {
     @Value("${kafka.topic.order-created-dlq}")
     private String orderCreatedDLQ;
 
+    @Value("${spring.kafka.schema-registry.url}")
+    private String schemaRegistryUrl;
+
     private Map<String, Object> consumerProps() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.gnt.ecom.*");
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+        props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, true); // Use specific Avro reader for OrderCreatedEvent
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, KafkaAvroDeserializer.class);
+//        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.gnt.ecom.*");
         return props;
     }
 
     @Bean
-    public ConsumerFactory<String, OrderCreatedEvent> orderConsumerFactory() {
+    public ConsumerFactory<String, Object> orderConsumerFactory() {
         Map<String, Object> props = consumerProps();
         props.put(ConsumerConfig.GROUP_ID_CONFIG, paymentGroup);
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(),
-                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(OrderCreatedEvent.class)));
+                new ErrorHandlingDeserializer<>(new KafkaAvroDeserializer()));
     }
 
     @Bean

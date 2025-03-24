@@ -6,12 +6,16 @@ import com.gnt.ecom.base.PageResponse;
 import com.gnt.ecom.order.event.OrderCreatedEvent;
 import com.gnt.ecom.payment.dto.PaymentDTO;
 import com.gnt.ecom.payment.entity.Payment;
+import com.gnt.ecom.payment.entity.PaymentMethod;
 import com.gnt.ecom.payment.repository.PaymentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class PaymentServiceImpl extends BaseServiceImpl<Payment, UUID> implements PaymentService {
 
@@ -40,11 +44,11 @@ public class PaymentServiceImpl extends BaseServiceImpl<Payment, UUID> implement
     @Override
     public PaymentDTO createFromOrder(OrderCreatedEvent orderCreatedEvent) {
         Payment payment = new Payment();
-        payment.setOrderId(orderCreatedEvent.getId());
-        payment.setTotalPrice(orderCreatedEvent.getTotalPrice());
-        payment.setTotalLocalPrice(orderCreatedEvent.getTotalLocalPrice());
+        payment.setOrderId(UUID.fromString(orderCreatedEvent.getId()));
+        payment.setTotalPrice(new BigDecimal(orderCreatedEvent.getTotalPrice()));
+        payment.setTotalLocalPrice(new BigDecimal(orderCreatedEvent.getTotalLocalPrice()));
         payment.setUserCurrency(orderCreatedEvent.getUserCurrency());
-        payment.setMethod(orderCreatedEvent.getMethod());
+        payment.setMethod(PaymentMethod.valueOf(orderCreatedEvent.getMethod()));
 
         return PaymentDTO.of(save(payment));
     }
