@@ -1,56 +1,63 @@
-version: '3.8'
-
+version: '3'
 services:
   zookeeper:
-    image: bitnami/zookeeper:latest
+    image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
     mem_limit: 256m
     mem_reservation: 128m
-    restart: always
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
 
   kafka:
-    image: bitnami/kafka:latest
+    image: confluentinc/cp-kafka:latest
     container_name: kafka
-    mem_limit: 768m
-    mem_reservation: 512m
-    environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,PLAINTEXT_HOST://kafka:29092
-      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
-      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_HEAP_OPTS=-Xmx512M -Xms256M
-      - KAFKA_LOG_RETENTION_HOURS=4
-      - KAFKA_LOG_RETENTION_BYTES=268435456
-      - KAFKA_LOG_SEGMENT_BYTES=536870912
-      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
-      - KAFKA_NUM_RECOVERY_THREADS_PER_DATA_DIR=1
-      - KAFKA_LOG_CLEANER_THREADS=1
-      - KAFKA_BACKGROUND_THREADS=1
-      - KAFKA_BUFFER_MEMORY=33554432
-    ports:
-      - "9092:9092"
-      - "29092:29092"
     depends_on:
       - zookeeper
-    restart: always
+    ports:
+      - "9092:9092"  # External access
+      - "29092:29092"  # Internal access (new port)
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    mem_limit: 768m
+    mem_reservation: 256m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   schema-registry:
     image: confluentinc/cp-schema-registry:latest
     container_name: schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
       - "8081:8081"
     environment:
-      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
-      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka:29092
-    depends_on:
-      - kafka
-    mem_limit: 512m    # Maximum RAM limit
-    mem_reservation: 128m  # Reserved RAM
-    restart: always
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092  # Updated to internal listener
+    mem_limit: 512m
+    mem_reservation: 128m
+    volumes:
+      - schema-registry-data:/var/lib/schema-registry/data
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  schema-registry-data:
