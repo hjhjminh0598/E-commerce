@@ -106,6 +106,7 @@ public class OrderServiceImpl extends BaseServiceImpl<Order, UUID> implements Or
                 .setTotalLocalPrice(order.getTotalLocalPrice().toString())
                 .setUserCurrency(order.getUserCurrency())
                 .setMethod(order.getMethod().toString())
+                .setCreatedAt(order.getCreatedAt().toString())
                 .build();
     }
 
