@@ -8,6 +8,8 @@
     {"name": "totalPrice", "type": "string"},
     {"name": "totalLocalPrice", "type": "string"},
     {"name": "userCurrency", "type": "string"},
-    {"name": "method", "type": ["null", "string"], "default": "CASH"}
+    {"name": "method", "type": ["null", "string"], "default": "CASH"},
+    {"name": "createdAt", "type": ["null", "string"], "default": null},
+    {"name": "testField", "type": ["null", "string"], "default": "This is a test field"}
   ]
 }

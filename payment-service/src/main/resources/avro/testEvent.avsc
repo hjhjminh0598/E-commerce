@@ -1,0 +1,8 @@
+{
+  "namespace": "com.gnt.ecom.order.event",
+  "type": "record",
+  "name": "TestEvent",
+  "fields": [
+    {"name": "id", "type": "string"}
+  ]
+}
