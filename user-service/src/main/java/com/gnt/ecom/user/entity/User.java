@@ -20,4 +20,6 @@ public class User extends BaseEntity {
 
     @Column(length = 3)
     private String currency;
+
+    private String password;
 }
