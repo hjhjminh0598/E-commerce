@@ -4,6 +4,8 @@ import com.gnt.ecom.user.service.UserService;
 import com.gnt.ecom.user_authentication.config.JwtProvider;
 import com.gnt.ecom.user_authentication.dto.JwtResponse;
 import com.gnt.ecom.user_authentication.dto.LoginRequest;
+import com.gnt.ecom.user_authentication.dto.RefreshTokenRequest;
+import com.gnt.ecom.user_authentication.entity.MyUserDetails;
 import com.gnt.ecom.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,16 +21,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final UserService userService;
 
-    private final JwtProvider jwtUtil;
+    private final JwtProvider jwtProvider;
+
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public JwtResponse authenticate(LoginRequest request) {
         validateRequest(request);
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        UserDetails userDetails = userService.loadUserByUsername(request.getUsername());
+        MyUserDetails userDetails = userService.loadUserByUsername(request.getUsername());
+        String accessToken = jwtProvider.generateToken(userDetails);
+        String refreshToken = refreshTokenService.createRefreshToken(request.getUsername());
 
-        return JwtResponse.of(jwtUtil.generateToken(userDetails));
+        return JwtResponse.of(accessToken, refreshToken);
     }
 
     private void validateRequest(LoginRequest request) {
@@ -45,5 +51,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         request.trim();
+    }
+
+    @Override
+    public JwtResponse refreshToken(RefreshTokenRequest request) {
+        String username = refreshTokenService.validateRefreshToken(request.getRefreshToken());
+        MyUserDetails userDetails = userService.loadUserByUsername(username);
+
+        String newAccessToken = jwtProvider.generateToken(userDetails);
+        String newRefreshToken = refreshTokenService.createRefreshToken(username);
+        refreshTokenService.deleteRefreshToken(request.getRefreshToken());
+
+        return JwtResponse.of(newAccessToken, newRefreshToken);
     }
 }

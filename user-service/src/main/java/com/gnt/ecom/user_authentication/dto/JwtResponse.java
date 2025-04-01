@@ -12,9 +12,12 @@ public class JwtResponse {
 
     private String token;
 
-    public static JwtResponse of(String token) {
+    private String refreshToken;
+
+    public static JwtResponse of(String token, String refreshToken) {
         JwtResponse response = new JwtResponse();
         response.setToken(token);
+        response.setRefreshToken(refreshToken);
         return response;
     }
 }

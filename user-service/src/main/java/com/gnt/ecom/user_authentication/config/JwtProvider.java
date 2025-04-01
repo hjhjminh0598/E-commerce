@@ -1,5 +1,6 @@
 package com.gnt.ecom.user_authentication.config;
 
+import com.gnt.ecom.user_authentication.entity.MyUserDetails;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -24,7 +25,10 @@ public class JwtProvider {
     private String secret;
 
     @Value("${jwt.expiration}")
-    private long expiration;
+    private long jwtExpiration;
+
+    @Value("${jwt.refresh-token-expiration}")
+    private long refreshTokenExpiration;
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
@@ -32,10 +36,19 @@ public class JwtProvider {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
 
-        return generateToken(claims, userDetails.getUsername());
+        return generateToken(claims, userDetails.getUsername(), jwtExpiration);
     }
 
-    private String generateToken(Map<String, Object> claims, String username) {
+    public String generateRefreshToken(MyUserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
+        return generateToken(claims, userDetails.getUsername(), refreshTokenExpiration);
+    }
+
+    private String generateToken(Map<String, Object> claims, String username, long expiration) {
         return Jwts.builder()
                 .claims(claims)
                 .subject(username)
@@ -70,10 +83,10 @@ public class JwtProvider {
                 .getPayload();
     }
 
-    public boolean isTokenValid(String token, String username) {
+    public boolean isTokenValid(String token, MyUserDetails userDetails) {
         try {
             final String extractedUsername = extractUsername(token);
-            return (extractedUsername.equals(username) && !isTokenExpired(token));
+            return (extractedUsername.equals(userDetails.getUsername()) && !isTokenExpired(token));
         } catch (Exception e) {
             return false;
         }

@@ -9,6 +9,7 @@ import com.gnt.ecom.user.entity.User;
 import com.gnt.ecom.user.event.UserCreatedEvent;
 import com.gnt.ecom.user.producer.UserProducer;
 import com.gnt.ecom.user.repository.UserRepository;
+import com.gnt.ecom.user_authentication.entity.MyUserDetails;
 import com.gnt.ecom.utils.StringUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,15 +40,13 @@ public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements User
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) {
+    public MyUserDetails loadUserByUsername(String username) {
         User user = getByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-                .password(user.getPassword())
-                .authorities("ROLE_USER")
+        return MyUserDetails.builder()
+                .user(user)
                 .build();
     }
 

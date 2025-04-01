@@ -1,5 +1,7 @@
 package com.gnt.ecom.user_authentication.config;
 
+import com.gnt.ecom.user.service.UserService;
+import com.gnt.ecom.user_authentication.entity.MyUserDetails;
 import com.gnt.ecom.utils.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,8 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -33,6 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
 
+    private final UserService userService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
@@ -50,9 +54,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtProvider.extractUsername(jwtToken);
 
             if (StringUtils.isNotBlank(username) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                MyUserDetails userDetails = userService.loadUserByUsername(username);
                 List<String> roles = jwtProvider.extractRoles(jwtToken);
 
-                if (jwtProvider.isTokenValid(jwtToken, username)) {
+                if (jwtProvider.isTokenValid(jwtToken, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             username,
                             null,
@@ -60,10 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    SecurityContext context = SecurityContextHolder.createEmptyContext();
-                    context.setAuthentication(authToken);
-                    SecurityContextHolder.setContext(context);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
         } catch (Exception e) {
