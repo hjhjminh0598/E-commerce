@@ -17,6 +17,10 @@ public class MyUserDetails implements UserDetails {
 
     private User user;
 
+    private Date lastRequestTime;
+
+    private String ipAddress;
+
     private final Set<GrantedAuthority> authorities = new HashSet<>(AuthorityUtils.createAuthorityList("ROLE_USER"));
 
     @Override

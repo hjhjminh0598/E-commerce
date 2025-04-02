@@ -6,7 +6,9 @@ import com.gnt.ecom.user_authentication.dto.RefreshTokenRequest;
 
 public interface AuthenticationService {
 
-    JwtResponse authenticate(LoginRequest request);
+    JwtResponse authenticate(LoginRequest request, String ipAddress);
 
-    JwtResponse refreshToken(RefreshTokenRequest request);
+    JwtResponse refreshToken(RefreshTokenRequest request, String ipAddress);
+
+    int logout();
 }

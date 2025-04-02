@@ -15,12 +15,13 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,12 +60,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (jwtProvider.isTokenValid(jwtToken, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            username,
+                            userDetails,
                             null,
                             roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
                     );
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    WebAuthenticationDetails webDetails = new WebAuthenticationDetailsSource().buildDetails(request);
+                    authToken.setDetails(webDetails);
+
+                    userDetails.setLastRequestTime(new Date());
+                    userDetails.setIpAddress(request.getRemoteAddr());
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
