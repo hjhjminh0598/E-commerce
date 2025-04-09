@@ -1,5 +1,6 @@
 package com.gnt.ecom.configuration;
 
+import com.gnt.ecom.utils.StringUtils;
 import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,7 @@ public class FeignConfig {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 String authHeader = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
-                if (authHeader != null) {
+                if (StringUtils.isNotBlank(authHeader)) {
                     request.header(HttpHeaders.AUTHORIZATION, authHeader);
                 }
             }
