@@ -9,12 +9,16 @@ import com.gnt.ecom.user.entity.User;
 import com.gnt.ecom.user.event.UserCreatedEvent;
 import com.gnt.ecom.user.producer.UserProducer;
 import com.gnt.ecom.user.repository.UserRepository;
+import com.gnt.ecom.user_authentication.config.JwtProvider;
+import com.gnt.ecom.user_authentication.dto.OAuth2Response;
 import com.gnt.ecom.user_authentication.entity.MyUserDetails;
 import com.gnt.ecom.utils.StringUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -32,11 +36,14 @@ public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements User
 
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, UserProducer userProducer, PasswordEncoder passwordEncoder) {
+    private final JwtProvider jwtProvider;
+
+    public UserServiceImpl(UserRepository userRepository, UserProducer userProducer, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
         super(userRepository);
         this.userRepository = userRepository;
         this.userProducer = userProducer;
         this.passwordEncoder = passwordEncoder;
+        this.jwtProvider = jwtProvider;
     }
 
     @Override
@@ -106,5 +113,19 @@ public class UserServiceImpl extends BaseServiceImpl<User, UUID> implements User
                     return save(user);
                 })
                 .orElseThrow(() -> new RuntimeException("User not found")));
+    }
+
+    @Override
+    public OAuth2Response loginWithGoogle(OAuth2AuthenticationToken authentication) {
+        OAuth2User oauth2User = authentication.getPrincipal();
+        String email = oauth2User.getAttribute("email");
+        String provider = authentication.getAuthorizedClientRegistrationId();
+
+        String token = jwtProvider.generateToken(email, provider);
+        return OAuth2Response.builder()
+                .email(email)
+                .token(token)
+                .provider(provider)
+                .build();
     }
 }
