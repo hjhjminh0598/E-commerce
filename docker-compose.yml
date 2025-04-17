@@ -1,5 +1,104 @@
-version: '3'
+version: '3.8'
+
 services:
+  # MySQL Databases
+  mysql_user:
+    image: mysql:8
+    container_name: mysql_user
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: user_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: giangnt@2025
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_user_data:/var/lib/mysql
+    mem_limit: 512m
+    mem_reservation: 256m
+    command:
+      - mysqld
+      - --innodb_buffer_pool_size=64M
+      - --max_connections=50
+      - --table_open_cache=128
+      - --performance_schema=OFF
+    networks:
+      - ecommerce-network
+
+  mysql_product:
+    image: mysql:8
+    container_name: mysql_product
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: product_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: giangnt@2025
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_product_data:/var/lib/mysql
+    mem_limit: 512m
+    mem_reservation: 256m
+    command:
+      - mysqld
+      - --innodb_buffer_pool_size=64M
+      - --max_connections=50
+      - --table_open_cache=128
+      - --performance_schema=OFF
+    networks:
+      - ecommerce-network
+
+  mysql_order:
+    image: mysql:8
+    container_name: mysql_order
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: giangnt@2025
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql_order_data:/var/lib/mysql
+    mem_limit: 512m
+    mem_reservation: 256m
+    command:
+      - mysqld
+      - --innodb_buffer_pool_size=64M
+      - --max_connections=50
+      - --table_open_cache=128
+      - --performance_schema=OFF
+    networks:
+      - ecommerce-network
+
+  mysql_payment:
+    image: mysql:8
+    container_name: mysql_payment
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: giangnt@2025
+    ports:
+      - "3312:3306"
+    volumes:
+      - mysql_payment_data:/var/lib/mysql
+    mem_limit: 512m
+    mem_reservation: 256m
+    command:
+      - mysqld
+      - --innodb_buffer_pool_size=64M
+      - --max_connections=50
+      - --table_open_cache=128
+      - --performance_schema=OFF
+    networks:
+      - ecommerce-network
+
+  # Kafka Setup
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -13,6 +112,8 @@ services:
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
       - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - ecommerce-network
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -20,8 +121,8 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"  # External access
-      - "29092:29092"  # Internal access (new port)
+      - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -39,6 +140,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ecommerce-network
 
   schema-registry:
     image: confluentinc/cp-schema-registry:latest
@@ -50,14 +153,168 @@ services:
       - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092  # Updated to internal listener
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
     mem_limit: 512m
     mem_reservation: 128m
     volumes:
       - schema-registry-data:/var/lib/schema-registry/data
+    networks:
+      - ecommerce-network
+
+  # Eureka Server (Service Discovery)
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Cloud Config Server
+  cloud-config-server:
+    build:
+      context: ./cloud-config-server
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/your-repo/config-repo.git
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+
+  # User Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "1025:1025"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mysql_user
+      - eureka-server
+      - cloud-config-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_user:3306/user_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=giangnt@2025
+      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+
+  # Product Service
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    ports:
+      - "2025:2025"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mysql_product
+      - eureka-server
+      - cloud-config-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_product:3306/product_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=giangnt@2025
+      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+
+  # Order Service
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    ports:
+      - "3025:3025"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mysql_order
+      - kafka
+      - eureka-server
+      - cloud-config-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_order:3306/order_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=giangnt@2025
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "4025:4025"
+    mem_limit: 512m
+    mem_reservation: 256m
+    networks:
+      - ecommerce-network
+    depends_on:
+      - mysql_payment
+      - kafka
+      - eureka-server
+      - cloud-config-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_payment:3306/payment_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=giangnt@2025
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
 
 volumes:
+  mysql_user_data:
+  mysql_product_data:
+  mysql_order_data:
+  mysql_payment_data:
   zookeeper-data:
   zookeeper-logs:
   kafka-data:
   schema-registry-data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
