@@ -1,7 +1,60 @@
-version: '3.8'
-
 services:
-  # MySQL Databases
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    mem_limit: 256m
+    mem_reservation: 128m
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    mem_limit: 768m
+    mem_reservation: 256m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+    mem_limit: 512m
+    mem_reservation: 128m
+    volumes:
+      - schema-registry-data:/var/lib/schema-registry/data
+
   mysql_user:
     image: mysql:8
     container_name: mysql_user
@@ -23,8 +76,11 @@ services:
       - --max_connections=50
       - --table_open_cache=128
       - --performance_schema=OFF
-    networks:
-      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mysql_product:
     image: mysql:8
@@ -47,8 +103,11 @@ services:
       - --max_connections=50
       - --table_open_cache=128
       - --performance_schema=OFF
-    networks:
-      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mysql_order:
     image: mysql:8
@@ -71,8 +130,11 @@ services:
       - --max_connections=50
       - --table_open_cache=128
       - --performance_schema=OFF
-    networks:
-      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mysql_payment:
     image: mysql:8
@@ -95,226 +157,217 @@ services:
       - --max_connections=50
       - --table_open_cache=128
       - --performance_schema=OFF
-    networks:
-      - ecommerce-network
-
-  # Kafka Setup
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
-    mem_limit: 256m
-    mem_reservation: 128m
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-      - zookeeper-logs:/var/lib/zookeeper/log
-    networks:
-      - ecommerce-network
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    mem_limit: 768m
-    mem_reservation: 256m
-    volumes:
-      - kafka-data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - ecommerce-network
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:latest
-    container_name: schema-registry
-    depends_on:
-      kafka:
-        condition: service_healthy
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
     ports:
-      - "8081:8081"
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
-    mem_limit: 512m
-    mem_reservation: 128m
-    volumes:
-      - schema-registry-data:/var/lib/schema-registry/data
-    networks:
-      - ecommerce-network
-
-  # Eureka Server (Service Discovery)
-  eureka-server:
-    build:
-      context: ./eureka-server
-      dockerfile: Dockerfile
-    ports:
-      - "8761:8761"
+      - "9411:9411"
     mem_limit: 512m
     mem_reservation: 256m
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Cloud Config Server
   cloud-config-server:
     build:
       context: ./cloud-config-server
       dockerfile: Dockerfile
+    container_name: cloud-config-server
     ports:
       - "8888:8888"
+    environment:
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/hjhjminh0598/e-commerce-config
+#      - SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME=${GIT_USERNAME:}
+#      - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD=${GIT_PASSWORD:}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     mem_limit: 512m
     mem_reservation: 256m
-    networks:
-      - ecommerce-network
     depends_on:
-      eureka-server:
-        condition: service_healthy
-    environment:
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/your-repo/config-repo.git
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - kafka
+      - mysql_user
+      - mysql_product
+      - mysql_order
+      - mysql_payment
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # API Gateway
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    mem_limit: 512m
+    mem_reservation: 256m
+    depends_on:
+      - cloud-config-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api-gateway:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
+    container_name: api-gateway
     ports:
       - "8080:8080"
+    environment:
+      - SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED=true
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
     mem_limit: 512m
     mem_reservation: 256m
-    networks:
-      - ecommerce-network
     depends_on:
-      eureka-server:
-        condition: service_healthy
-    environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - eureka-server
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # User Service
   user-service:
     build:
       context: ./user-service
       dockerfile: Dockerfile
+    container_name: user-service
     ports:
       - "1025:1025"
-    mem_limit: 512m
-    mem_reservation: 256m
-    networks:
-      - ecommerce-network
-    depends_on:
-      - mysql_user
-      - eureka-server
-      - cloud-config-server
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_user:3306/user_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_user:3306/user_db
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=giangnt@2025
-      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    mem_limit: 512m
+    mem_reservation: 256m
+    depends_on:
+      mysql_user:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1025/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Product Service
   product-service:
     build:
       context: ./product-service
       dockerfile: Dockerfile
+    container_name: product-service
     ports:
       - "2025:2025"
-    mem_limit: 512m
-    mem_reservation: 256m
-    networks:
-      - ecommerce-network
-    depends_on:
-      - mysql_product
-      - eureka-server
-      - cloud-config-server
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_product:3306/product_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_product:3306/product_db
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=giangnt@2025
-      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    mem_limit: 512m
+    mem_reservation: 256m
+    depends_on:
+      mysql_product:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2025/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Order Service
   order-service:
     build:
       context: ./order-service
       dockerfile: Dockerfile
+    container_name: order-service
     ports:
       - "3025:3025"
-    mem_limit: 512m
-    mem_reservation: 256m
-    networks:
-      - ecommerce-network
-    depends_on:
-      - mysql_order
-      - kafka
-      - eureka-server
-      - cloud-config-server
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_order:3306/order_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_order:3306/order_db
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=giangnt@2025
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    mem_limit: 512m
+    mem_reservation: 256m
+    depends_on:
+      mysql_order:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3025/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Payment Service
   payment-service:
     build:
       context: ./payment-service
       dockerfile: Dockerfile
+    container_name: payment-service
     ports:
       - "4025:4025"
-    mem_limit: 512m
-    mem_reservation: 256m
-    networks:
-      - ecommerce-network
-    depends_on:
-      - mysql_payment
-      - kafka
-      - eureka-server
-      - cloud-config-server
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_payment:3306/payment_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql_payment:3306/payment_db
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=giangnt@2025
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - SPRING_CLOUD_CONFIG_URI=http://cloud-config-server:8888
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_KAFKA_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    mem_limit: 512m
+    mem_reservation: 256m
+    depends_on:
+      mysql_payment:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4025/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  mysql_user_data:
-  mysql_product_data:
-  mysql_order_data:
-  mysql_payment_data:
   zookeeper-data:
   zookeeper-logs:
   kafka-data:
   schema-registry-data:
-
-networks:
-  ecommerce-network:
-    driver: bridge
+  mysql_user_data:
+  mysql_product_data:
+  mysql_order_data:
+  mysql_payment_data:
