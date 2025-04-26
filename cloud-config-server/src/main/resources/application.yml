@@ -13,27 +13,3 @@ spring:
           uri: https://github.com/hjhjminh0598/e-commerce-config
           default-label: main
           clone-on-start: true
-    bus:
-      enabled: true
-  kafka:
-    bootstrap-servers: kafka:9092
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: refresh, health, info, bus-refresh
-  endpoint:
-    health:
-      show-details: always
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true
-  instance:
-    hostname: cloud-config-server
-    lease-renewal-interval-in-seconds: 5
-    lease-expiration-duration-in-seconds: 10
