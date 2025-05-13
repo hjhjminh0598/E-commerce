@@ -2,8 +2,7 @@ spring:
   application:
     name: api-gateway  # Must match 'api-gateway.yml' in Git
   config:
-    import: "configserver:"  # ✅ REQUIRED for Spring Boot 3.x
+    import: "optional:configserver:http://config-server:8888"
   cloud:
     config:
-      uri: http://localhost:8888  # Fetch from Config Server
-      fail-fast: true  # Fail startup if Config Server is unavailable
+      fail-fast: true

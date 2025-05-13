@@ -1,0 +1,96 @@
+# api-gateway.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: us-docker.pkg.dev/fresh-replica-458307-s5/gcr.io/api-gateway:v1-amd64 # Your amd64 API Gateway image
+          ports:
+            - containerPort: 8080 # Assuming your API Gateway runs on port 8080
+          env:
+            - name: SERVER_PORT
+              value: "8080" # Port the gateway listens on
+            - name: SPRING_APPLICATION_NAME
+              value: "api-gateway" # For config server and eureka registration
+            # Configure to fetch from Config Server
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            # Configure to register with Eureka
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://eureka-server:8761/eureka/"
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS # Useful in K8s if hostname resolution has quirks
+              value: "true"
+            # Expose health, info, prometheus (for monitoring), and gateway (for routes) actuators
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health,info,prometheus,gateway"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"     # 0.2 CPU core (Gateways can be a bit more demanding)
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"    # 1 CPU core
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness # Standard Spring Boot Actuator health endpoint
+              port: 8080
+            initialDelaySeconds: 45 # Gateways might take a bit to load routes/connect
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness # Standard Spring Boot Actuator health endpoint
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 5
+---
+# Internal ClusterIP Service for API Gateway (optional, but good practice)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway # Internal DNS name
+  labels:
+    app: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - protocol: TCP
+      port: 8080       # Port the service listens on
+      targetPort: 8080 # Port on the pods
+  type: ClusterIP
+---
+# External NodePort Service for API Gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-external
+  labels:
+    app: api-gateway
+spec:
+  type: NodePort
+  selector:
+    app: api-gateway
+  ports:
+    - protocol: TCP
+      port: 8080       # Service port (less relevant for NodePort URL)
+      targetPort: 8080 # Pod port
+      name: http
+      # nodePort: 30080 # Optional: specify a NodePort, or let K8s assign one
