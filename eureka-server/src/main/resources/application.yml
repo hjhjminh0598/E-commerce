@@ -1,9 +1,8 @@
 spring:
   application:
-    name: eureka-server  # Must match 'eureka-server.yml' in Git
+    name: eureka-server
   config:
-    import: "configserver:"  # ✅ REQUIRED for Spring Boot 3.x
+    import: "optional:configserver:http://config-server:8888"
   cloud:
     config:
-      uri: http://localhost:8888  # Fetch from Cloud Config Server
-      fail-fast: true  # Ensure Eureka Server fails fast if Config Server is unavailable
+      fail-fast: true
