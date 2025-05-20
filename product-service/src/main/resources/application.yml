@@ -1,11 +1,8 @@
 spring:
   application:
-    name: product-service  # Must match 'product-service.yml' in Git
+    name: product-service
   config:
-    import: "configserver:"  # ✅ REQUIRED for Spring Boot 3.x
+    import: "optional:configserver:http://config-server:8888"
   cloud:
     config:
-      uri: http://localhost:8888  # Fetch from Config Server
-      fail-fast: true  # Fail startup if Config Server is unavailable
-    bus:
-      enabled: true
+      fail-fast: true
