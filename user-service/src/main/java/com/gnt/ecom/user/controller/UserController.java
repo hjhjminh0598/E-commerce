@@ -7,7 +7,6 @@ import com.gnt.ecom.user.dto.UpdateUserRequest;
 import com.gnt.ecom.user.dto.UserDTO;
 import com.gnt.ecom.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,9 +21,6 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-
-    @Value("${project.owner}")
-    private String projectOwner;
 
     @GetMapping
     public ResponseEntity<BaseResponse<PageResponse<UserDTO>>> getAll(
@@ -71,10 +67,5 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.ok(BaseResponse.failure());
         }
-    }
-
-    @GetMapping("/project-owner")
-    public ResponseEntity<BaseResponse<String>> getProjectOwner() {
-        return ResponseEntity.ok(BaseResponse.success(projectOwner));
     }
 }

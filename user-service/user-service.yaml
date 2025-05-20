@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: us-docker.pkg.dev/fresh-replica-458307-s5/gcr.io/user-service:v1-amd64 # Your amd64 user-service image
+          ports:
+            - containerPort: 1025 # Port your user-service runs on
+          env:
+            - name: SERVER_PORT
+              value: "1025"
+            - name: SPRING_APPLICATION_NAME
+              value: "user-service" # For config server and eureka registration
+            # Configure to fetch from Config Server
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            # Configure to register with Eureka
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://eureka-server:8761/eureka/"
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            # Expose health and info actuators for probes
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health,info,prometheus"
+          resources:
+            requests:
+              memory: "256Mi" # Adjust based on your service's needs
+              cpu: "100m"
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 1025
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 1025
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service # Internal DNS name for API Gateway and other services
+  labels:
+    app: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 1025       # Port the service listens on
+      targetPort: 1025 # Port on the pods
+  type: ClusterIP    # Only accessible from within the cluster
