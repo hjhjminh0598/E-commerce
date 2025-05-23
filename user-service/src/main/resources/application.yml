@@ -6,4 +6,4 @@ spring:
   cloud:
     config:
       fail-fast: true
-#Test CI flow
+#Test CI flow 1
