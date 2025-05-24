@@ -1,0 +1,53 @@
+// Jenkinsfile (Declarative Pipeline)
+pipeline {
+    agent any // Run on any available agent (your Jenkins master for now)
+
+    tools {
+        maven 'MAVEN_HOME' // Assuming you've configured a Maven tool in Jenkins Global Tool Configuration
+        jdk 'JDK_17'       // Assuming you've configured a JDK tool
+    }
+
+    environment {
+        // Define any environment variables needed for the build
+        SERVICE_DIR = 'user-service' // For monorepo structure
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checking out code for ${SERVICE_DIR}..."
+                // For monorepo, you might need to specify a subdirectory if using 'Poll SCM' later
+                // or ensure your Git plugin settings in Jenkins job config handle it.
+                // For now, this assumes the Jenkins job is configured for the E-commerce repo.
+                checkout scm
+            }
+        }
+        stage('Build & Test') {
+            steps {
+                dir(SERVICE_DIR) { // Change directory to the service's path
+                    echo "Building ${SERVICE_DIR}..."
+                    sh 'mvn clean package -DskipTests' // Or your preferred Maven command
+                }
+            }
+        }
+        stage('Archive Artifact') {
+            steps {
+                dir(SERVICE_DIR) {
+                    echo "Archiving JAR for ${SERVICE_DIR}..."
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}

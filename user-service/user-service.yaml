@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: us-docker.pkg.dev/fresh-replica-458307-s5/gcr.io/user-service:v1-amd64 # Your amd64 user-service image
+          image: us-docker.pkg.dev/fresh-replica-458307-s5/gcr.io/user-service:7ed82a4a9543cc3adc7f25fbec468a5c0d94225d # Your amd64 user-service image
           ports:
             - containerPort: 1025 # Port your user-service runs on
           env:
