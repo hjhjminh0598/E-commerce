@@ -1,83 +1,83 @@
-name: User Service CI - Build and Push to GAR
-
-on:
-  push:
-    branches:
-      - master # Your main branch
-    paths:
-      - 'user-service/**'   # Only trigger if files in user-service directory change
-      - '.github/workflows/user-service-ci.yml' # Also trigger if this workflow file itself changes
-  pull_request:
-    branches:
-      - master
-    paths:
-      - 'user-service/**'
-      - '.github/workflows/user-service-ci.yml'
-
-env:
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}         # From GitHub Secrets (e.g., fresh-replica-458307-s5)
-  GAR_LOCATION: ${{ secrets.GAR_LOCATION }}             # From GitHub Secrets (e.g., us)
-  GAR_REPOSITORY: ${{ secrets.GAR_REPOSITORY }}         # From GitHub Secrets (e.g., gcr.io)
-  IMAGE_NAME: user-service                             # Specific to this service
-  IMAGE_TAG: ${{ github.sha }}                         # Unique tag using commit SHA
-  # Service Account email to impersonate via WIF
-  GCP_SERVICE_ACCOUNT_EMAIL: 'github-actions-builder@fresh-replica-458307-s5.iam.gserviceaccount.com' # Your SA email
-
-jobs:
-  build-and-push-user-service:
-    name: Build User Service Docker image and push to GAR
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./user-service # Default for all run steps in this job
-
-    permissions:
-      contents: 'read'
-      id-token: 'write' # REQUIRED for Workload Identity Federation
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml -DskipTests
-
-      # Authenticate to Google Cloud using Workload Identity Federation
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: 'google-github-actions/auth@v2' # Using v2 for WIF
-        with:
-          # These are the values from your gcloud setup:
-          workload_identity_provider: 'projects/268171029378/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
-          service_account: '${{ env.GCP_SERVICE_ACCOUNT_EMAIL }}'
-
-      - name: Set up Cloud SDK (gcloud)
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and Push Docker Image
-        env:
-          FULL_IMAGE_NAME: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-        run: |
-          echo "Building and pushing image: ${FULL_IMAGE_NAME}"
-          docker buildx build --platform linux/amd64 \
-            -t "${FULL_IMAGE_NAME}" \
-            --file Dockerfile \
-            --push \
-            .
-
-      - name: Output Image Name
-        run: |
-          echo "Pushed image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+#name: User Service CI - Build and Push to GAR
+#
+#on:
+#  push:
+#    branches:
+#      - master # Your main branch
+#    paths:
+#      - 'user-service/**'   # Only trigger if files in user-service directory change
+#      - '.github/workflows/user-service-ci.yml' # Also trigger if this workflow file itself changes
+#  pull_request:
+#    branches:
+#      - master
+#    paths:
+#      - 'user-service/**'
+#      - '.github/workflows/user-service-ci.yml'
+#
+#env:
+#  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}         # From GitHub Secrets (e.g., fresh-replica-458307-s5)
+#  GAR_LOCATION: ${{ secrets.GAR_LOCATION }}             # From GitHub Secrets (e.g., us)
+#  GAR_REPOSITORY: ${{ secrets.GAR_REPOSITORY }}         # From GitHub Secrets (e.g., gcr.io)
+#  IMAGE_NAME: user-service                             # Specific to this service
+#  IMAGE_TAG: ${{ github.sha }}                         # Unique tag using commit SHA
+#  # Service Account email to impersonate via WIF
+#  GCP_SERVICE_ACCOUNT_EMAIL: 'github-actions-builder@fresh-replica-458307-s5.iam.gserviceaccount.com' # Your SA email
+#
+#jobs:
+#  build-and-push-user-service:
+#    name: Build User Service Docker image and push to GAR
+#    runs-on: ubuntu-latest
+#
+#    defaults:
+#      run:
+#        working-directory: ./user-service # Default for all run steps in this job
+#
+#    permissions:
+#      contents: 'read'
+#      id-token: 'write' # REQUIRED for Workload Identity Federation
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#
+#      - name: Set up JDK 17
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#
+#      - name: Build with Maven
+#        run: mvn -B package --file pom.xml -DskipTests
+#
+#      # Authenticate to Google Cloud using Workload Identity Federation
+#      - name: Authenticate to Google Cloud
+#        id: auth
+#        uses: 'google-github-actions/auth@v2' # Using v2 for WIF
+#        with:
+#          # These are the values from your gcloud setup:
+#          workload_identity_provider: 'projects/268171029378/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider'
+#          service_account: '${{ env.GCP_SERVICE_ACCOUNT_EMAIL }}'
+#
+#      - name: Set up Cloud SDK (gcloud)
+#        uses: google-github-actions/setup-gcloud@v2
+#
+#      - name: Configure Docker for Artifact Registry
+#        run: gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev --quiet
+#
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#
+#      - name: Build and Push Docker Image
+#        env:
+#          FULL_IMAGE_NAME: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+#        run: |
+#          echo "Building and pushing image: ${FULL_IMAGE_NAME}"
+#          docker buildx build --platform linux/amd64 \
+#            -t "${FULL_IMAGE_NAME}" \
+#            --file Dockerfile \
+#            --push \
+#            .
+#
+#      - name: Output Image Name
+#        run: |
+#          echo "Pushed image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
