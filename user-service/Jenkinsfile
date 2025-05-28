@@ -11,13 +11,13 @@ pipeline {
 
     environment {
         // Variables specific to this service's pipeline
-        SERVICE_DIR                 = 'user-service' // Subdirectory in your monorepo for this service
-        IMAGE_NAME                  = 'user-service' // Subdirectory in your monorepo for this service
+        SERVICE_DIR                 = 'user-service'
+        IMAGE_NAME                  = 'user-service'
         GCP_PROJECT_ID              = 'fresh-replica-458307-s5'
         GAR_LOCATION                = 'us'
         GAR_REPOSITORY              = 'gcr.io'
-        // IMAGE_TAG will use the Jenkins build number for uniqueness and amd64 indication
         IMAGE_TAG                   = "build-${env.BUILD_NUMBER}-amd64"
+        GCP_SA_CREDENTIAL_ID        = 'gcp-sa-artifact-registry' // <<<--- ADD THIS LINE BACK
     }
 
     stages {
