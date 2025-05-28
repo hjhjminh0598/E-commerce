@@ -88,7 +88,7 @@ pipeline {
                                     kubectl set image deployment/${env.IMAGE_NAME} ${env.IMAGE_NAME}=${fullImageName}
 
                                     echo "Checking rollout status for deployment ${env.IMAGE_NAME}..."
-                                    kubectl rollout status deployment/${env.IMAGE_NAME} --timeout=5m
+                                    kubectl rollout status deployment/${env.IMAGE_NAME} --timeout=10m
                                 """
                             }
                             echo "Deployment of ${env.IMAGE_NAME} to GKE completed."
