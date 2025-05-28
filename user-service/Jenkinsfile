@@ -17,7 +17,9 @@ pipeline {
         GAR_LOCATION                = 'us'
         GAR_REPOSITORY              = 'gcr.io'
         IMAGE_TAG                   = "build-${env.BUILD_NUMBER}-amd64"
-        GCP_SA_CREDENTIAL_ID        = 'gcp-sa-artifact-registry' // <<<--- ADD THIS LINE BACK
+        GCP_SA_CREDENTIAL_ID        = 'gcp-sa-artifact-registry'
+        GKE_CLUSTER_NAME            = 'kafka-cluster'
+        GKE_CLUSTER_ZONE            = 'us-central1-c'
     }
 
     stages {
