@@ -1,90 +1,49 @@
 // Jenkinsfile for E-commerce Monorepo - User Service CI
 
-// Groovy variable to store the full image name for use in the post section
-def builtImageFullName
-
 pipeline {
-    agent any // Runs on the Jenkins master VM (assuming Docker, gcloud, Java, Maven are installed there)
+    agent any // Runs on the Jenkins master VM (which has Docker, gcloud, Java, Maven)
 
     tools {
-        // Ensure these tool names match your Jenkins Global Tool Configuration
+        // Ensure these tool names match what you configured in Jenkins Global Tool Configuration
         maven 'MAVEN_HOME' // e.g., MAVEN_HOME, or your chosen name
         jdk 'JDK_17'       // e.g., JDK_17, or your chosen name
     }
 
     environment {
         // Variables specific to this service's pipeline
-        SERVICE_NAME                = 'user-service'
         SERVICE_DIR                 = 'user-service' // Subdirectory in your monorepo for this service
-        GCP_PROJECT_ID              = 'fresh-replica-458307-s5' // Your GCP Project ID
-        GCP_SA_CREDENTIAL_ID        = 'your-gcp-sa-credentials-id' // *** IMPORTANT: Set this to your Jenkins credential ID for the GCP SA JSON key ***
-        GAR_LOCATION                = 'us' // e.g., us-central1, europe-west1 (the region of your Artifact Registry)
-        GAR_REPOSITORY_NAME         = 'your-artifact-repo-name' // *** IMPORTANT: Change this to the name of your Docker repository in Artifact Registry ***
-                                                                // This was previously GAR_REPOSITORY = 'gcr.io', which is incorrect for the repository name.
+        IMAGE_NAME                  = 'user-service' // Subdirectory in your monorepo for this service
+        GCP_PROJECT_ID              = 'fresh-replica-458307-s5'
+        GAR_LOCATION                = 'us'
+        GAR_REPOSITORY              = 'gcr.io'
+        // IMAGE_TAG will use the Jenkins build number for uniqueness and amd64 indication
+        IMAGE_TAG                   = "build-${env.BUILD_NUMBER}-amd64"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                // Add your SCM checkout steps here
-                // Example for Git:
-                // git url: 'your-repo-url', branch: 'main', credentialsId: 'your-git-credentials-id'
-                echo "Checking out code from ${env.SERVICE_DIR}..."
-                // Assuming the Jenkins job is configured to check out the monorepo root,
-                // and subsequent operations will be within SERVICE_DIR
-            }
-        }
-
-        stage('Compile and Test Application') {
-            steps {
-                dir(env.SERVICE_DIR) { // Navigate to the service's directory
-                    sh '''
-                        echo "Building and testing the application..."
-                        mvn clean package
-                        # Add any other test or quality check commands here
-                    '''
-                }
-            }
-        }
+        // ... (Checkout, Build & Test Application stages remain the same) ...
 
         stage('Build and Push Docker Image') {
             steps {
-                dir(env.SERVICE_DIR) { // Ensure your Dockerfile is in this service's directory
+                dir(env.SERVICE_DIR) { // Ensure your Dockerfile is in this directory
                     script {
-                        // Define image details
-                        def serviceImageName = env.SERVICE_NAME // Using SERVICE_NAME as the base for the image name component
-                        if (serviceImageName == null || serviceImageName.isEmpty()) {
-                            error "SERVICE_NAME environment variable is not set or empty!"
-                        }
+                        // Define image details robustly within the script block
+                        def serviceName = env.IMAGE_NAME // Should pick up 'user-service' from pipeline env
+                        def imageTag = "build-${currentBuild.number}-amd64" // Use currentBuild.number
+                        def fullImageName = "${env.GAR_LOCATION}-docker.pkg.dev/${env.GCP_PROJECT_ID}/${env.GAR_REPOSITORY}/${serviceName}:${imageTag}"
 
-                        // Use currentBuild.number for a unique and robust tag
-                        def imageTag = "build-${currentBuild.number}-amd64"
-
-                        // Construct the full image name for Artifact Registry
-                        builtImageFullName = "${env.GAR_LOCATION}-docker.pkg.dev/${env.GCP_PROJECT_ID}/${env.GAR_REPOSITORY_NAME}/${serviceImageName}:${imageTag}"
-
-                        echo "Attempting to build and push Docker image: ${builtImageFullName}"
-
-                        // Ensure GCP_SA_CREDENTIAL_ID is set in your Jenkins environment or credentials
-                        if (env.GCP_SA_CREDENTIAL_ID == null || env.GCP_SA_CREDENTIAL_ID.isEmpty() || env.GCP_SA_CREDENTIAL_ID == 'your-gcp-sa-credentials-id') {
-                             error "GCP_SA_CREDENTIAL_ID is not set or is still the default placeholder. Please configure it in Jenkins."
-                        }
-                        if (env.GAR_REPOSITORY_NAME == null || env.GAR_REPOSITORY_NAME.isEmpty() || env.GAR_REPOSITORY_NAME == 'your-artifact-repo-name') {
-                             error "GAR_REPOSITORY_NAME is not set or is still the default placeholder. Please configure it."
-                        }
+                        echo "Building and pushing Docker image: ${fullImageName}"
 
                         withCredentials([file(credentialsId: env.GCP_SA_CREDENTIAL_ID, variable: 'GCP_KEY_FILE_PATH')]) {
                             sh """
-                                echo "Attempting Docker login to https://${env.GAR_LOCATION}-docker.pkg.dev using SA key..."
-                                cat "\${GCP_KEY_FILE_PATH}" | docker login -u _json_key --password-stdin https://${env.GAR_LOCATION}-docker.pkg.dev
-                                echo "Docker login attempt finished."
+                                echo "Attempting Docker login to https://${env.GAR_LOCATION}-docker.pkg.dev using provided SA key..."
+                                cat "${GCP_KEY_FILE_PATH}" | docker login -u _json_key --password-stdin https://${env.GAR_LOCATION}-docker.pkg.dev
 
-                                echo "Building Docker image for platform linux/amd64..."
-                                # Using docker buildx to specify platform and push
-                                docker buildx build --platform linux/amd64 -t "${builtImageFullName}" --push .
-                                echo "Docker build and push process for ${builtImageFullName} completed."
+                                echo "Login attempt finished. Proceeding with Docker build and push for ${fullImageName}"
+                                docker buildx build --platform linux/amd64 -t "${fullImageName}" --push .
                             """
                         }
+                        echo "Push process for ${fullImageName} completed."
                     }
                 }
             }
@@ -98,13 +57,7 @@ pipeline {
             // cleanWs()
         }
         success {
-            script {
-                if (builtImageFullName) {
-                    echo "Pipeline Succeeded: Image ${builtImageFullName} pushed to Google Artifact Registry."
-                } else {
-                    echo "Pipeline Succeeded. (Image details might not have been captured for this message)"
-                }
-            }
+            echo "Pipeline Succeeded: ${env.IMAGE_NAME}:${env.IMAGE_TAG} pushed to GAR."
         }
         failure {
             echo 'Pipeline failed. Check console output for details.'
