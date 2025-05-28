@@ -21,7 +21,22 @@ pipeline {
     }
 
     stages {
-        // ... (Checkout, Build & Test Application stages remain the same) ...
+
+        stage('Checkout Code') {
+            steps {
+                echo "Checking out code for ${env.SERVICE_NAME}..." // Using SERVICE_NAME from top-level env
+                checkout scm
+            }
+        }
+
+        stage('Build Application') { // Renamed for clarity
+            steps {
+                dir(env.SERVICE_DIR) {
+                    echo "Building ${env.IMAGE_NAME} with Maven..." // Using IMAGE_NAME from top-level env
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
+        }
 
         stage('Build and Push Docker Image') {
             steps {
@@ -54,8 +69,6 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
-            // Optional: Clean up workspace to save disk space on Jenkins master
-            // cleanWs()
         }
         success {
             echo "Pipeline Succeeded: ${env.IMAGE_NAME}:${env.IMAGE_TAG} pushed to GAR."
