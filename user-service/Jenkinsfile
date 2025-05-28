@@ -64,6 +64,35 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to GKE') {
+                    steps {
+                        script {
+                            def fullImageName = "${env.GAR_LOCATION}-docker.pkg.dev/${env.GCP_PROJECT_ID}/${env.GAR_REPOSITORY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+
+                            echo "Deploying ${fullImageName} to GKE cluster ${env.GKE_CLUSTER_NAME} in zone ${env.GKE_CLUSTER_ZONE}..."
+                            withCredentials([file(credentialsId: env.GCP_SA_CREDENTIAL_ID, variable: 'GCP_KEY_FILE_PATH')]) {
+                                sh """
+                                    echo "Activating GCP Service Account for GKE deployment..."
+                                    gcloud auth activate-service-account --key-file=${GCP_KEY_FILE_PATH} --project=${env.GCP_PROJECT_ID}
+
+                                    echo "Getting GKE cluster credentials..."
+                                    gcloud container clusters get-credentials ${env.GKE_CLUSTER_NAME} --zone ${env.GKE_CLUSTER_ZONE} --project ${env.GCP_PROJECT_ID}
+
+                                    echo "Updating deployment ${env.IMAGE_NAME} with image ${fullImageName}..."
+                                    # Using kubectl set image for simplicity.
+                                    # Assumes your K8s deployment name matches your IMAGE_NAME (e.g., 'user-service')
+                                    # and the container within the deployment also matches IMAGE_NAME.
+                                    kubectl set image deployment/${env.IMAGE_NAME} ${env.IMAGE_NAME}=${fullImageName}
+
+                                    echo "Checking rollout status for deployment ${env.IMAGE_NAME}..."
+                                    kubectl rollout status deployment/${env.IMAGE_NAME} --timeout=5m
+                                """
+                            }
+                            echo "Deployment of ${env.IMAGE_NAME} to GKE completed."
+                        }
+                    }
+        }
     }
 
     post {
