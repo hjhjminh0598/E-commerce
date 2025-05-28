@@ -1,98 +1,83 @@
-// Jenkinsfile - Phase 3: Docker Build and Push
+// Jenkinsfile for E-commerce Monorepo - User Service CI
 
 pipeline {
-    agent any // Runs on the Jenkins master (which now has Docker access via socket)
+    agent any // Runs on the Jenkins master VM (which has Docker, gcloud, Java, Maven)
 
     tools {
-        maven 'MAVEN_HOME' // Ensure this is configured in Jenkins Global Tool Configuration
-        jdk 'JDK_17'       // Ensure this is configured in Jenkins Global Tool Configuration
+        // Ensure these tool names match what you configured in Jenkins Global Tool Configuration
+        maven 'MAVEN_HOME' // e.g., MAVEN_HOME, or your chosen name
+        jdk 'JDK_17'       // e.g., JDK_17, or your chosen name
     }
 
     environment {
-        SERVICE_DIR                 = 'user-service' // Change for other services
-        GCP_PROJECT_ID              = 'fresh-replica-458307-s5' // Your GCP Project ID
-        GAR_LOCATION                = 'us' // Your Artifact Registry location
-        GAR_REPOSITORY              = 'gcr.io' // Your Artifact Registry repository name
-        IMAGE_NAME                  = 'user-service' // Change for other services
-        IMAGE_TAG                   = "build-${env.BUILD_NUMBER}-amd64" // Unique tag using Jenkins build number
-        GCP_SA_CREDENTIAL_ID        = 'gcp-sa-artifact-registry' // The ID you gave the credential in Jenkins
+        // Variables specific to this service's pipeline
+        SERVICE_NAME                = 'user-service'
+        SERVICE_DIR                 = 'user-service' // Subdirectory in your monorepo for this service
+        GCP_PROJECT_ID              = 'fresh-replica-458307-s5'
+        GAR_LOCATION                = 'us'
+        GAR_REPOSITORY              = 'gcr.io'
+        // IMAGE_TAG will use the Jenkins build number for uniqueness and amd64 indication
+        IMAGE_TAG                   = "build-${env.BUILD_NUMBER}-amd64"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                echo "Checking out code for ${env.SERVICE_DIR}..."
+                echo "Checking out code from SCM for ${env.SERVICE_NAME}..."
+                // This checks out the entire E-commerce repository.
+                // The 'dir' step in subsequent stages will navigate to the correct subdirectory.
                 checkout scm
             }
         }
 
-        stage('Build & Test Application') {
+        stage('Build Application') {
             steps {
+                // Navigate to the specific service's directory before running Maven
                 dir(env.SERVICE_DIR) {
-                    echo "Building ${env.SERVICE_DIR}..."
+                    echo "Building ${env.SERVICE_NAME} with Maven..."
+                    // Assuming pom.xml is in the root of the SERVICE_DIR (e.g., user-service/pom.xml)
                     sh 'mvn clean package -DskipTests'
                 }
             }
         }
 
         stage('Build and Push Docker Image') {
-                    steps {
-                        dir(env.SERVICE_DIR) { // Ensure your Dockerfile is in this directory
-                            script {
-                                def fullImageName = "${env.GAR_LOCATION}-docker.pkg.dev/${env.GCP_PROJECT_ID}/${env.GAR_REPOSITORY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                                echo "Building and pushing Docker image: ${fullImageName}"
+            steps {
+                // Navigate to the service's directory where its Dockerfile is located
+                dir(env.SERVICE_DIR) {
+                    script {
+                        def fullImageName = "${env.GAR_LOCATION}-docker.pkg.dev/${env.GCP_PROJECT_ID}/${env.GAR_REPOSITORY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                        echo "Building and pushing Docker image: ${fullImageName}"
 
-                                withCredentials([file(credentialsId: env.GCP_SA_CREDENTIAL_ID, variable: 'GCP_KEY_FILE_PATH')]) {
-                                    sh """
-                                        # Check if Docker CLI is installed, if not, try to install it
-                                        # This assumes a Debian/Ubuntu-based Jenkins image like jenkins/jenkins:lts-jdk17
-                                        if ! command -v docker &> /dev/null
-                                        then
-                                            echo "Docker CLI not found, attempting to install..."
-                                            apt-get update -y && apt-get install -y docker.io --no-install-recommends
-                                            if ! command -v docker &> /dev/null
-                                            then
-                                                echo "Failed to install Docker CLI using 'docker.io'. Trying with Docker's official script..."
-                                                # Fallback if docker.io isn't suitable or available via that name
-                                                curl -fsSL https://get.docker.com -o get-docker.sh
-                                                sh get-docker.sh
-                                                rm get-docker.sh
-                                                if ! command -v docker &> /dev/null
-                                                then
-                                                    echo "FATAL: Docker CLI still not found after multiple attempts. Please check Jenkins agent configuration."
-                                                    exit 1
-                                                fi
-                                            fi
-                                            echo "Docker CLI installed."
-                                        else
-                                            echo "Docker CLI found."
-                                        fi
+                        // Authenticate Docker to Google Artifact Registry.
+                        // This uses the GCE VM's attached service account permissions.
+                        // Ensure the VM's service account has "Artifact Registry Writer" role.
+                        sh "gcloud auth configure-docker ${env.GAR_LOCATION}-docker.pkg.dev --quiet"
 
-                                        echo "Attempting Docker login to https://${env.GAR_LOCATION}-docker.pkg.dev"
-                                        # Use cat to pipe the JSON key to docker login's --password-stdin
-                                        cat "${GCP_KEY_FILE_PATH}" | docker login -u _json_key --password-stdin https://${env.GAR_LOCATION}-docker.pkg.dev
+                        // Build and push.
+                        // The Jenkins VM (GCE e2-medium) is amd64, so it will build an amd64 image.
+                        // Using --platform linux/amd64 is still good practice for explicitness.
+                        // Assumes Dockerfile is in the root of SERVICE_DIR (e.g., user-service/Dockerfile)
+                        sh "docker buildx build --platform linux/amd64 -t ${fullImageName} --push ."
 
-                                        echo "Attempting Docker buildx build and push for ${fullImageName}"
-                                        # Your Mac's Docker Desktop (with buildx) will execute this via the mounted socket
-                                        docker buildx build --platform linux/amd64 -t "${fullImageName}" --push .
-                                    """
-                                }
-                                echo "Successfully pushed (or attempted to push) ${fullImageName}"
-                            }
-                        }
+                        echo "Successfully pushed ${fullImageName}"
                     }
                 }
+            }
+        }
     }
 
     post {
         always {
             echo 'Pipeline finished.'
+            // Optional: Clean up workspace to save disk space on Jenkins master
+            // cleanWs()
         }
         success {
-            echo "Pipeline Succeeded: ${env.IMAGE_NAME}:${env.IMAGE_TAG} pushed."
+            echo "Pipeline Succeeded: ${env.IMAGE_NAME}:${env.IMAGE_TAG} pushed to GAR."
         }
         failure {
-            echo 'Pipeline failed.'
+            echo 'Pipeline failed. Check console output for details.'
         }
     }
 }
