@@ -37,10 +37,10 @@ spec:
               value: "health,info,prometheus"
           resources:
             requests:
-              memory: "256Mi" # Adjust based on your service's needs
+              memory: "512Mi" # Adjust based on your service's needs
               cpu: "100m"
             limits:
-              memory: "768Mi"
+              memory: "1Gi"
               cpu: "500m"
           readinessProbe:
             httpGet:
