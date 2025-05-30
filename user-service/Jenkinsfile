@@ -34,8 +34,8 @@ pipeline {
         stage('Build Application') { // Renamed for clarity
             steps {
                 dir(env.SERVICE_DIR) {
-                    echo "Building ${env.IMAGE_NAME} with Maven..." // Using IMAGE_NAME from top-level env
-                    sh 'mvn clean package -DskipTests'
+                    echo "Building ${env.IMAGE_NAME} with Maven and running tests..." // Using IMAGE_NAME from top-level env
+                    sh 'mvn clean package'
                 }
             }
         }
