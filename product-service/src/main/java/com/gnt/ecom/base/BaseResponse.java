@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 @Builder
 public class BaseResponse<T> {
 
-    private static final String DATA_RETRIEVED_SUCCESS = "Data retrieved successfully";
+    private static final String DATA_RETRIEVED_SUCCESS = "Data retrieved successfully TEST CI";
 
     private static final String DATA_NOT_FOUND = "Data not found";
 
