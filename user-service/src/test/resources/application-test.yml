@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    config:
+      enabled: false # This is the key to stop it from contacting the config server
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1 # In-memory H2 database for tests
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect # Specify H2 dialect
+    hibernate:
+      ddl-auto: create-drop # Automatically create schema on startup and drop on shutdown for tests
+    show-sql: true # Optional: good for debugging SQL queries during tests
